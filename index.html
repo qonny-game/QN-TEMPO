@@ -3,552 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QNTEMPO</title>
-<style>
-  :root{
-    --bg-0:#0b0f10;
-    --bg-1:#12181a;
-    --bg-2:#1a2224;
-    --line:#26302f;
-    --ink-0:#f2f5f4;
-    --ink-1:#9fb0ad;
-    --ink-2:#5f7370;
-    --accent:#28e0c5;
-    --accent-dim:#16463f;
-    --accent-glow:rgba(40,224,197,0.35);
-    --warn:#ff6a5c;
-    --radius-lg:22px;
-    --radius-md:14px;
-    --radius-sm:9px;
-    font-size:16px;
-  }
-
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{
-    margin:0;padding:0;height:100%;
-    background:var(--bg-0);
-    color:var(--ink-0);
-    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
-    overscroll-behavior:none;
-    user-select:none;
-  }
-  #app{
-    display:flex;
-    flex-direction:column;
-    height:100dvh;
-    max-width:520px;
-    margin:0 auto;
-    padding-top:env(safe-area-inset-top);
-    padding-bottom:env(safe-area-inset-bottom);
-    position:relative;
-  }
-
-  /* ---------- Header ---------- */
-  header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:14px 18px 10px;
-    flex-shrink:0;
-  }
-  .brand{
-    display:flex;
-    flex-direction:column;
-    line-height:1;
-  }
-  .brand .name{
-    font-size:19px;
-    font-weight:700;
-    letter-spacing:0.14em;
-    color:var(--ink-0);
-  }
-  .brand .name span{ color:var(--accent); }
-  .brand .tag{
-    margin-top:4px;
-    font-size:10px;
-    letter-spacing:0.16em;
-    color:var(--ink-2);
-  }
-  .icon-btn{
-    width:38px;height:38px;
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    background:var(--bg-2);
-    border:1px solid var(--line);
-    color:var(--ink-1);
-    font-size:16px;
-  }
-  .icon-btn:active{ background:var(--accent-dim); color:var(--accent);}
-
-  /* ---------- Pulse stage ---------- */
-  .stage{
-    flex-shrink:0;
-    margin:4px 18px 0;
-    border-radius:var(--radius-lg);
-    background:radial-gradient(120% 140% at 50% -10%, #16201f 0%, #0a0d0e 70%);
-    border:1px solid var(--line);
-    padding:22px 16px 18px;
-    position:relative;
-    overflow:hidden;
-  }
-  .stage-meta{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    padding:0 4px 16px;
-  }
-  .measure-label{
-    font-size:11px;
-    letter-spacing:0.12em;
-    color:var(--ink-2);
-  }
-  .measure-value{
-    font-size:13px;
-    color:var(--ink-1);
-    font-weight:600;
-  }
-  .beats{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    flex-wrap:wrap;
-    padding-bottom:10px;
-  }
-  .beat-dot{
-    flex:1 1 0;
-    max-width:64px;
-    aspect-ratio:1/1;
-    border-radius:50%;
-    background:var(--bg-2);
-    border:1.5px solid var(--line);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    transition:transform .06s ease, background .08s ease, border-color .08s ease, box-shadow .12s ease;
-  }
-  .beat-dot .n{
-    font-size:13px;
-    font-weight:700;
-    color:var(--ink-2);
-  }
-  .beat-dot.accent{
-    border-color:#3a4a47;
-  }
-  .beat-dot.accent .n{ color:var(--ink-1); }
-  .beat-dot.active{
-    background:var(--accent);
-    border-color:var(--accent);
-    transform:scale(1.12);
-    box-shadow:0 0 22px var(--accent-glow);
-  }
-  .beat-dot.active .n{ color:#04211c; }
-  .beat-dot.active.accent{
-    background:#fff;
-    border-color:#fff;
-    box-shadow:0 0 26px rgba(255,255,255,0.45);
-  }
-  .beat-dot.active.accent .n{ color:#0a0d0e; }
-  .beat-dot.muted{ opacity:0.35; }
-
-  .beat-dot .subticks{
-    position:absolute;
-    bottom:-9px;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    gap:3px;
-  }
-  .beat-dot .subticks i{
-    width:4px;height:4px;
-    border-radius:50%;
-    background:var(--ink-2);
-    display:block;
-  }
-  .beat-dot .subticks i.hit{ background:var(--ink-1); }
-  .beat-dot .subticks i.hit.lit{ background:var(--accent); box-shadow:0 0 6px var(--accent-glow); }
-  .beat-dot .subticks i.ghost-tick{ background:transparent; border:1px solid var(--ink-2); }
-
-  /* ---------- BPM control ---------- */
-  .bpm-panel{
-    flex:1;
-    margin:14px 18px 0;
-    border-radius:var(--radius-lg);
-    background:var(--bg-1);
-    border:1px solid var(--line);
-    padding:18px 14px 14px;
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-  }
-
-  .bpm-row{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:14px;
-  }
-  .step-btn{
-    width:52px;height:52px;
-    border-radius:50%;
-    background:var(--bg-2);
-    border:1px solid var(--line);
-    color:var(--ink-0);
-    font-size:26px;
-    font-weight:300;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-  }
-  .step-btn:active{ background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
-
-  .bpm-display{
-    text-align:center;
-    min-width:0;
-  }
-  .bpm-num{
-    font-size:clamp(56px,17vw,84px);
-    font-weight:200;
-    letter-spacing:-0.02em;
-    color:var(--ink-0);
-    font-variant-numeric:tabular-nums;
-    line-height:1;
-  }
-  .bpm-unit{
-    margin-top:2px;
-    font-size:11px;
-    letter-spacing:0.18em;
-    color:var(--ink-2);
-  }
-
-  .slider-wrap{
-    margin:16px 4px 4px;
-  }
-  input[type=range]{
-    -webkit-appearance:none;
-    width:100%;
-    height:34px;
-    background:transparent;
-  }
-  input[type=range]::-webkit-slider-runnable-track{
-    height:4px;
-    background:linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill,50%), var(--line) var(--fill,50%), var(--line) 100%);
-    border-radius:2px;
-  }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    width:22px;height:22px;
-    margin-top:-9px;
-    border-radius:50%;
-    background:var(--accent);
-    border:3px solid #04211c;
-    box-shadow:0 0 0 1px var(--accent);
-  }
-
-  .marks{
-    display:flex;
-    justify-content:space-between;
-    padding:0 2px;
-    font-size:9px;
-    color:var(--ink-2);
-    letter-spacing:0.04em;
-  }
-
-  .tempo-name-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-top:14px;
-    padding-top:12px;
-    border-top:1px solid var(--line);
-  }
-  .tempo-name{
-    font-style:italic;
-    font-size:15px;
-    color:var(--ink-1);
-  }
-  .tap-btn{
-    padding:10px 18px;
-    border-radius:999px;
-    background:var(--bg-2);
-    border:1px solid var(--line);
-    color:var(--ink-0);
-    font-size:12px;
-    font-weight:700;
-    letter-spacing:0.1em;
-  }
-  .tap-btn:active{ background:var(--accent); border-color:var(--accent); color:#04211c; }
-
-  /* ---------- Time signature & accent editor ---------- */
-  .sig-row{
-    display:flex;
-    gap:8px;
-    margin-top:14px;
-  }
-  .sig-btn{
-    flex:1;
-    padding:11px 4px;
-    text-align:center;
-    border-radius:var(--radius-sm);
-    background:var(--bg-2);
-    border:1px solid var(--line);
-    color:var(--ink-1);
-    font-size:14px;
-    font-weight:700;
-    font-variant-numeric:tabular-nums;
-  }
-  .sig-btn.selected{
-    background:var(--accent-dim);
-    border-color:var(--accent);
-    color:var(--accent);
-  }
-  .sig-btn.custom{
-    color:var(--ink-2);
-    font-weight:400;
-    font-size:12px;
-  }
-
-  .accent-hint{
-    text-align:center;
-    font-size:10.5px;
-    color:var(--ink-2);
-    margin-top:10px;
-    letter-spacing:0.02em;
-  }
-
-  /* ---------- Subdivision ---------- */
-  .subdiv-row{
-    display:flex;
-    gap:8px;
-    margin-top:12px;
-  }
-  .subdiv-btn{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:6px;
-    padding:9px 4px 8px;
-    border-radius:var(--radius-sm);
-    background:var(--bg-2);
-    border:1px solid var(--line);
-  }
-  .subdiv-btn .sd-label{
-    font-size:10.5px;
-    color:var(--ink-2);
-    letter-spacing:0.04em;
-  }
-  .subdiv-btn .sd-dots{
-    display:flex;
-    gap:4px;
-    height:6px;
-    align-items:center;
-  }
-  .subdiv-btn .sd-dots i{
-    width:6px;height:6px;
-    border-radius:50%;
-    background:var(--ink-2);
-    display:block;
-  }
-  .subdiv-btn .sd-dots i.ghost{
-    background:transparent;
-    border:1px solid var(--ink-2);
-  }
-  .subdiv-btn.selected{
-    background:var(--accent-dim);
-    border-color:var(--accent);
-  }
-  .subdiv-btn.selected .sd-label{ color:var(--accent); }
-  .subdiv-btn.selected .sd-dots i{ background:var(--accent); }
-  .subdiv-btn.selected .sd-dots i.ghost{ border-color:var(--accent); }
-
-  /* ---------- Transport ---------- */
-  .transport{
-    flex-shrink:0;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:16px 24px calc(14px + env(safe-area-inset-bottom));
-  }
-  .transport-side{
-    width:64px;
-    text-align:center;
-    font-size:11px;
-    letter-spacing:0.08em;
-    color:var(--ink-2);
-  }
-  .transport-side b{
-    display:block;
-    color:var(--ink-1);
-    font-size:13px;
-    font-weight:700;
-    margin-top:2px;
-  }
-  .play-btn{
-    width:84px;height:84px;
-    border-radius:50%;
-    background:var(--accent);
-    border:none;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 30px var(--accent-glow);
-    flex-shrink:0;
-  }
-  .play-btn:active{ transform:scale(0.96); }
-  .play-btn svg{ width:30px;height:30px; }
-  .play-btn.playing{ background:var(--warn); box-shadow:0 8px 30px rgba(255,106,92,0.35); }
-
-  footer{
-    text-align:center;
-    font-size:9.5px;
-    letter-spacing:0.08em;
-    color:var(--ink-2);
-    padding-bottom:calc(10px + env(safe-area-inset-bottom));
-  }
-
-  /* Modal */
-  .modal-backdrop{
-    position:fixed;inset:0;
-    background:rgba(0,0,0,0.6);
-    display:none;
-    align-items:flex-end;
-    justify-content:center;
-    z-index:50;
-  }
-  .modal-backdrop.show{ display:flex; }
-  .modal{
-    width:100%;
-    max-width:520px;
-    background:var(--bg-1);
-    border-top-left-radius:24px;
-    border-top-right-radius:24px;
-    border:1px solid var(--line);
-    border-bottom:none;
-    padding:20px 20px calc(20px + env(safe-area-inset-bottom));
-    max-height:70vh;
-    overflow-y:auto;
-  }
-  .modal h3{
-    margin:0 0 14px;
-    font-size:15px;
-    letter-spacing:0.08em;
-    color:var(--ink-0);
-  }
-  .accent-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:8px;
-    margin-bottom:16px;
-  }
-  .accent-cell{
-    padding:12px 0;
-    text-align:center;
-    border-radius:var(--radius-sm);
-    background:var(--bg-2);
-    border:1px solid var(--line);
-    font-size:13px;
-    font-weight:700;
-    color:var(--ink-2);
-  }
-  .accent-cell.on{
-    background:var(--accent-dim);
-    border-color:var(--accent);
-    color:var(--accent);
-  }
-  .modal-close{
-    width:100%;
-    padding:14px;
-    border-radius:999px;
-    background:var(--accent);
-    border:none;
-    color:#04211c;
-    font-weight:700;
-    font-size:14px;
-    letter-spacing:0.05em;
-  }
-</style>
+<title>QN TEMPO 1.0.0</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
 
-  <header>
-    <div class="brand">
-      <div class="name">QN<span>TEMPO</span></div>
-      <div class="tag">METRONOME</div>
-    </div>
-    <button class="icon-btn" id="soundToggle" aria-label="音色切替">♪</button>
-  </header>
+<div id="appHeader">
+  <h1 id="appLogo">QN TEMPO <span id="appVersion">v1.0.0</span></h1>
+  <button id="soundToggleBtn" title="音色を切り替え">
+    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+    <span id="soundToggleLabel">クリック</span>
+  </button>
+</div>
 
+<div class="stage-wrap">
   <div class="stage">
     <div class="stage-meta">
-      <span class="measure-label">BEAT</span>
-      <span class="measure-value" id="beatCounter">1 / 4</span>
+      <span class="stage-meta-label">Beat</span>
+      <span class="stage-meta-value" id="beatCounter">1 / 4</span>
     </div>
     <div class="beats" id="beatsRow"></div>
+    <div class="stage-hint">拍を長押しでアクセント編集</div>
   </div>
+</div>
 
-  <div class="bpm-panel">
-    <div class="bpm-row">
-      <button class="step-btn" id="minus">−</button>
-      <div class="bpm-display">
-        <div class="bpm-num" id="bpmNum">120</div>
-        <div class="bpm-unit">BPM</div>
-      </div>
-      <button class="step-btn" id="plus">＋</button>
-    </div>
+<div class="time-controls-row" style="margin-top:18px;">
+  <div id="bpmDisplay">
+    <span class="bpm-val" id="bpmVal">120</span>
+    <span class="bpm-unit">BPM</span>
+  </div>
+</div>
+<div class="tempo-name-row">
+  <span id="tempoName">Moderato</span>
+</div>
 
-    <div class="slider-wrap">
+<div class="bpm-panel-box">
+  <div class="bpm-stepper-row">
+    <button class="step-btn" id="bpmMinus" title="BPMを下げる">−</button>
+    <div class="bpm-slider-wrap">
       <input type="range" id="bpmSlider" min="30" max="260" value="120">
-      <div class="marks"><span>30</span><span>90</span><span>150</span><span>210</span><span>260</span></div>
+      <div class="bpm-marks"><span>30</span><span>90</span><span>150</span><span>210</span><span>260</span></div>
     </div>
+    <button class="step-btn" id="bpmPlus" title="BPMを上げる">＋</button>
+  </div>
+  <div class="tap-readout-row">
+    <span class="tap-readout">TAPで測定：<b id="tapReadout">—</b></span>
+  </div>
+</div>
 
-    <div class="tempo-name-row">
-      <span class="tempo-name" id="tempoName">Allegro</span>
-      <button class="tap-btn" id="tapBtn">TAP</button>
-    </div>
+<div class="basic-panel-box">
+  <div class="adjust-controls-row">
+    <div class="time-controls-buttons">
+      <div class="header-btn-wrapper">
+        <button id="sigToggleBtn" class="av-toggle-btn" title="拍子">
+          <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm0 8h18v2H3v-2zm0 8h18v2H3v-2z"/></svg>
+          <span class="av-toggle-btn-text">
+            <span class="av-toggle-btn-value" id="sigToggleValue">4/4</span>
+            <span class="av-toggle-btn-label">拍子</span>
+          </span>
+        </button>
+      </div>
 
-    <div class="sig-row" id="sigRow">
-      <button class="sig-btn selected" data-beats="4">4/4</button>
-      <button class="sig-btn" data-beats="3">3/4</button>
-      <button class="sig-btn" data-beats="2">2/4</button>
-      <button class="sig-btn" data-beats="6">6/8</button>
-      <button class="sig-btn custom" id="customSigBtn">…</button>
-    </div>
-
-    <div class="accent-hint" id="accentHint">拍を長押しでアクセント編集・タップで確認</div>
-
-    <div class="subdiv-row" id="subdivRow">
-      <button class="subdiv-btn selected" data-subdiv="straight">
-        <span class="sd-label">通常</span>
-        <span class="sd-dots"><i></i></span>
-      </button>
-      <button class="subdiv-btn" data-subdiv="triplet">
-        <span class="sd-label">3連</span>
-        <span class="sd-dots"><i></i><i></i><i></i></span>
-      </button>
-      <button class="subdiv-btn" data-subdiv="triplet-hollow">
-        <span class="sd-label">中抜き</span>
-        <span class="sd-dots"><i></i><i class="ghost"></i><i></i></span>
-      </button>
+      <div class="header-btn-wrapper">
+        <button id="subdivToggleBtn" class="av-toggle-btn" title="分割">
+          <svg viewBox="0 0 24 24"><path d="M4 4h4v16H4V4zm6 4h4v12h-4V8zm6-6h4v18h-4V2z"/></svg>
+          <span class="av-toggle-btn-text">
+            <span class="av-toggle-btn-value" id="subdivToggleValue">通常</span>
+            <span class="av-toggle-btn-label">分割</span>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
+</div>
 
-  <div class="transport">
-    <div class="transport-side" id="sigLabel">拍子<b>4/4</b></div>
-    <button class="play-btn" id="playBtn">
-      <svg id="playIcon" viewBox="0 0 24 24" fill="#04211c"><polygon points="6,4 20,12 6,20"/></svg>
+<!-- 拍子ピッカー -->
+<div class="av-popup-backdrop" id="sigBackdrop"></div>
+<div class="av-popup" id="sigPopup">
+  <p class="popup-title">拍子を選択</p>
+  <div class="choice-grid" id="sigGrid"></div>
+  <button class="popup-close-btn" id="sigCloseBtn">決定</button>
+</div>
+
+<!-- 分割ピッカー -->
+<div class="av-popup-backdrop" id="subdivBackdrop"></div>
+<div class="av-popup" id="subdivPopup">
+  <p class="popup-title">拍の分割（全拍に適用）</p>
+  <div class="subdiv-choice-row">
+    <div class="subdiv-choice selected" data-subdiv="straight">
+      <span class="sd-label">通常</span>
+      <span class="sd-dots"><i></i></span>
+    </div>
+    <div class="subdiv-choice" data-subdiv="triplet">
+      <span class="sd-label">3連</span>
+      <span class="sd-dots"><i></i><i></i><i></i></span>
+    </div>
+    <div class="subdiv-choice" data-subdiv="triplet-hollow">
+      <span class="sd-label">3連中抜き</span>
+      <span class="sd-dots"><i></i><i class="ghost"></i><i></i></span>
+    </div>
+  </div>
+  <button class="popup-close-btn" id="subdivCloseBtn">決定</button>
+</div>
+
+<!-- 下部固定トランスポート（QNAUDIOのtop-controlsに準拠） -->
+<div class="top-controls" id="topControls">
+  <div class="top-controls-row">
+    <div class="tripleNavBtn" title="BPM操作 / 再生">
+      <button id="bpmMinus2" class="tripleNavBtn-third tripleNavBtn-left" title="BPM -1">
+        <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+        <span class="top-controls-btn-label">BPM</span>
+      </button>
+      <span class="tripleNavBtn-divider"></span>
+      <button id="playToggle" class="tripleNavBtn-third tripleNavBtn-center" title="再生 / 停止">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span class="top-controls-btn-label">Play</span>
+      </button>
+      <span class="tripleNavBtn-divider"></span>
+      <button id="bpmPlus2" class="tripleNavBtn-third tripleNavBtn-right" title="BPM +1">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <span class="top-controls-btn-label">BPM</span>
+      </button>
+    </div>
+    <button id="tapBtn" class="loopbtn" title="TAPテンポ">
+      <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+      <span class="top-controls-btn-label">Tap</span>
     </button>
-    <div class="transport-side" id="tapLabel">誤差<b>—</b></div>
-  </div>
-
-  <footer>QNTEMPO Ver1.0.0 by QONNY</footer>
-</div>
-
-<div class="modal-backdrop" id="customSigModal">
-  <div class="modal">
-    <h3>拍数を選択</h3>
-    <div class="accent-grid" id="customBeatsGrid"></div>
-    <button class="modal-close" id="customSigClose">決定</button>
   </div>
 </div>
+<div class="top-controls-spacer" id="topControlsSpacer"></div>
 
 <script src="app.js"></script>
 </body>
