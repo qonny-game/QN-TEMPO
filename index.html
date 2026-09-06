@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 0.1.1</title>
+<title>QN TEMPO 0.1.2</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="appHeader">
-  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.1.1</span></h1>
+  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.1.2</span></h1>
   <button id="soundToggleBtn" title="音色を切り替え">
     <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
     <span id="soundToggleLabel">クリック</span>
@@ -20,10 +20,10 @@
   <div class="stage">
     <div class="stage-meta">
       <span class="stage-meta-label">Beat</span>
-      <span class="stage-meta-value" id="beatCounter">1 / 4</span>
+      <span class="stage-meta-value" id="beatCounter">1<span class="stage-meta-total">/ 4</span></span>
     </div>
     <div class="beats" id="beatsRow"></div>
-    <div class="stage-hint">拍を長押しでアクセント編集</div>
+    <div class="stage-hint">タップでアクセント　<span class="stage-hint-dim">・</span>　強拍がリズムの土台になるよ</div>
   </div>
 </div>
 

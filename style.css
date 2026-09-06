@@ -114,7 +114,7 @@ body {
 }
 #soundToggleBtn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
 
-/* ---------- Pulse stage (waveform-bar equivalent) ---------- */
+/* ---------- Pulse stage — the heart of the app ---------- */
 .stage-wrap {
   flex: 1;
   min-height: 0;
@@ -126,10 +126,10 @@ body {
 
 .stage {
   width: 100%;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 16px;
-  padding: 16px 14px 14px;
+  background: linear-gradient(180deg, #17171d 0%, #131318 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 20px 16px 16px;
   box-sizing: border-box;
 }
 
@@ -137,97 +137,171 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .stage-meta-label {
   font-family: var(--font-display, 'Outfit'), sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #6b6b7b;
+  color: #55555f;
 }
 
 .stage-meta-value {
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #c8c8d0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #f0f0f3;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stage-meta-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: #55555f;
+  margin-left: 3px;
 }
 
 .beats {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
+  row-gap: 16px;
   flex-wrap: wrap;
-  padding-bottom: 12px;
+  padding: 4px 0 18px;
 }
 
+/* タップ領域は大きく、見た目のドットは中に置く二重構造。
+   親(.beat-dot)が指のヒットエリア、子(.beat-dot-face)が実際の見た目。
+   こうすることで小節数が増えて円が縮んでも、タップのしやすさへの
+   影響を最小限にできる。 */
 .beat-dot {
   flex: 1 1 0;
-  max-width: 60px;
+  max-width: 76px;
+  min-width: 44px;
   aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background: #1c1c24;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: transform 0.08s var(--ease-snap), background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap);
+  cursor: pointer;
+}
+
+.beat-dot-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #1c1c24;
+  border: 2px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.12s var(--ease-snap), background var(--dur-hover) var(--ease-snap),
+              border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap);
 }
 
 .beat-dot .n {
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
-  color: #6b6b7b;
+  color: #4d4d58;
+  transition: color var(--dur-hover) var(--ease-snap);
 }
 
-.beat-dot.accent { border-color: rgba(255, 255, 255, 0.22); }
-.beat-dot.accent .n { color: #c8c8d0; }
+/* --- 強拍：塗りつぶし＋アクセントカラーで一目瞭然にする（枠線の濃淡だけに頼らない） --- */
+.beat-dot.accent .beat-dot-face {
+  background: linear-gradient(150deg, #2a2f3d, #1c1f28);
+  border-color: var(--accent-primary);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+}
+.beat-dot.accent .n { color: var(--accent-primary); }
 
-.beat-dot.active {
+/* 強拍だけ左上に小さな三角マーク（アクセント記号 > のようなもの）を added し、
+   「ここが強拍」という情報を色以外の形でも伝える（色覚に依存しない設計）。 */
+.beat-dot.accent .accent-mark {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--accent-primary);
+  opacity: 0.85;
+}
+
+/* --- タップ中のフィードバック（押した瞬間、はっきり沈む） --- */
+.beat-dot.pressed .beat-dot-face {
+  transform: scale(0.88);
+}
+
+/* --- 実際に音が鳴った瞬間：弾む＋強く光る。ここがアプリの主役の瞬間なので、
+       他のどのアニメーションよりも派手にする。 --- */
+.beat-dot.active .beat-dot-face {
+  animation: beatPulse 0.28s var(--ease-pop);
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  transform: scale(1.14);
-  box-shadow: 0 0 20px var(--accent-glow);
+  box-shadow: 0 0 0 6px var(--accent-glow), 0 0 28px var(--accent-glow);
 }
 .beat-dot.active .n { color: #fff; }
-.beat-dot.active.accent {
-  background: #fff;
-  border-color: #fff;
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45);
+.beat-dot.active .accent-mark { border-top-color: #fff; opacity: 1; }
+
+.beat-dot.active.accent .beat-dot-face {
+  background: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.25), 0 0 34px rgba(255, 255, 255, 0.55);
 }
 .beat-dot.active.accent .n { color: #0d0d0f; }
 
+@keyframes beatPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1.1); }
+}
+.beat-dot.active { transform: scale(1); }
+.beat-dot.active .beat-dot-face { transform: scale(1.1); }
+
+/* --- 拍の分割（subdivision）：小さい点ではなく、拍の輪の下側に
+       弧を描くセグメントとして見せる。今どのタイミングで音が鳴るか
+       ("・タ・タ" のような間隔)が、記号の羅列より直感的に伝わる。 --- */
 .beat-dot .subticks {
   position: absolute;
-  bottom: -9px;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 2.5px;
+  gap: 3px;
 }
 .beat-dot .subticks i {
-  width: 3.5px; height: 3.5px;
+  width: 5px; height: 5px;
   border-radius: 50%;
-  background: #3a3a46;
+  background: rgba(255, 255, 255, 0.14);
   display: block;
+  transition: background 0.1s ease, box-shadow 0.1s ease;
 }
-.beat-dot .subticks i.hit { background: #6b6b7b; }
-.beat-dot .subticks i.hit.lit { background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
-.beat-dot .subticks i.ghost-tick { background: transparent; border: 1px solid #3a3a46; }
+.beat-dot.active .subticks i { background: rgba(255, 255, 255, 0.3); }
+.beat-dot .subticks i.hit.lit {
+  background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+.beat-dot .subticks i.ghost-tick {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
 .stage-hint {
   text-align: center;
   font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
-  font-size: 10.5px;
-  color: #6b6b7b;
-  margin-top: 8px;
+  font-size: 11px;
+  color: #55555f;
+  margin-top: 4px;
+  letter-spacing: 0.1px;
 }
+.stage-hint-dim { color: #33333c; }
 
 /* ---------- Time / BPM display ---------- */
 .time-controls-row {

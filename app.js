@@ -85,6 +85,9 @@
   window.addEventListener('resize', syncSpacer);
 
   // ---------- Render beats ----------
+  // タップ = アクセントのON/OFF切替（長押し不要、即座に反応するシンプル操作）。
+  // .beat-dot（当たり判定・大きめ）と .beat-dot-face（見た目の丸）を分離し、
+  // 拍数が増えて円が小さくなってもタップしやすさを保つ。
   function renderBeats() {
     beatsRow.innerHTML = '';
     for (let i = 0; i < state.beatsPerBar; i++) {
@@ -92,10 +95,17 @@
       dot.className = 'beat-dot' + (state.accents[i] ? ' accent' : '');
       dot.dataset.index = i;
 
+      const face = document.createElement('div');
+      face.className = 'beat-dot-face';
+
+      const mark = document.createElement('span');
+      mark.className = 'accent-mark';
+      face.appendChild(mark);
+
       const n = document.createElement('span');
       n.className = 'n';
       n.textContent = i + 1;
-      dot.appendChild(n);
+      face.appendChild(n);
 
       const slots = slotsFor(state.subdivisions[i] || 'quarter');
       if (slots.length > 1) {
@@ -106,23 +116,35 @@
           t.className = hit ? 'hit' : 'ghost-tick';
           ticks.appendChild(t);
         });
-        dot.appendChild(ticks);
+        face.appendChild(ticks);
       }
+
+      dot.appendChild(face);
       beatsRow.appendChild(dot);
 
-      let pressTimer = null;
-      const onDown = () => {
-        pressTimer = setTimeout(() => {
-          state.accents[i] = !state.accents[i];
-          dot.classList.add('editing');
-          renderBeats();
-          hapticTick();
-        }, 420);
+      const onDown = () => dot.classList.add('pressed');
+      const onUp = () => dot.classList.remove('pressed');
+      const onTap = () => {
+        state.accents[i] = !state.accents[i];
+        renderBeats();
+        hapticTick();
       };
-      const onUp = () => clearTimeout(pressTimer);
+      let touched = false;
       dot.addEventListener('touchstart', onDown, { passive: true });
-      dot.addEventListener('touchend', onUp);
-      dot.addEventListener('touchmove', onUp);
+      dot.addEventListener('touchend', (e) => {
+        touched = true;
+        onUp();
+        onTap();
+        e.preventDefault();
+      }, { passive: false });
+      dot.addEventListener('touchcancel', onUp);
+      dot.addEventListener('mousedown', onDown);
+      dot.addEventListener('mouseup', onUp);
+      dot.addEventListener('mouseleave', onUp);
+      dot.addEventListener('click', () => {
+        if (touched) { touched = false; return; } // タッチ端末でのclick二重発火を防止
+        onTap();
+      });
       dot.addEventListener('mousedown', onDown);
       dot.addEventListener('mouseup', onUp);
       dot.addEventListener('mouseleave', onUp);
@@ -132,7 +154,7 @@
 
   function updateBeatCounter() {
     const shown = state.currentBeat < 0 ? 1 : state.currentBeat + 1;
-    beatCounter.textContent = `${shown} / ${state.beatsPerBar}`;
+    beatCounter.innerHTML = `${shown}<span class="stage-meta-total">/ ${state.beatsPerBar}</span>`;
   }
 
   function presetLabelFor(n) {
@@ -350,7 +372,7 @@
     const target = dots[i];
     if (target) {
       target.classList.add('active');
-      setTimeout(() => target.classList.remove('active'), 110);
+      setTimeout(() => target.classList.remove('active'), 160);
     }
   }
 
