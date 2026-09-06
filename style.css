@@ -42,14 +42,12 @@ body {
   color: #f0f0f3;
   font-family: var(--font-body, 'Plus Jakarta Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  padding: env(safe-area-inset-top, 14px) 20px 0;
+  padding: 16px 28px 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   user-select: none;
 }
-
-#appHeader { padding-top: 2px; }
 
 /* ---------- Header ---------- */
 #appHeader {
@@ -58,17 +56,22 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: nowrap;
+  padding-top: max(2px, env(safe-area-inset-top, 0px));
 }
 
 #appLogo {
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 1px;
   margin: 0;
   color: #f0f0f3;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
 }
 
 #appLogoQN {
@@ -76,7 +79,7 @@ body {
 }
 
 #appVersion {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.5px;
   color: #6b6b7b;
@@ -87,33 +90,6 @@ body {
 
 .header-btn-wrapper { position: relative; }
 
-#soundToggleBtn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  cursor: pointer;
-  color: #f0f0f3;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-}
-
-#soundToggleBtn:active { transform: scale(0.96); }
-#soundToggleBtn.active {
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-#soundToggleBtn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
-
 /* ---------- Pulse stage — the heart of the app ---------- */
 .stage-wrap {
   flex: 1;
@@ -121,7 +97,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .stage {
@@ -430,23 +406,13 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   color: #6b6b7b;
 }
 
-/* ---------- Basic panel box (Time Sig / Subdivision toggle buttons) ---------- */
-.basic-panel-box {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.adjust-controls-row {
-  display: flex;
-  width: 100%;
-}
-
-.time-controls-buttons {
+/* ---------- Stage settings row (Time Sig / Subdivision toggle buttons) ---------- */
+/* BEATステージの中に統合し、テンポ表示との視覚的な距離を縮める */
+.stage-settings-row {
   display: flex;
   gap: 8px;
   width: 100%;
+  margin-top: 4px;
 }
 
 .av-toggle-btn {
@@ -456,12 +422,12 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 54px;
+  min-height: 50px;
   box-sizing: border-box;
-  padding: 10px 12px;
+  padding: 9px 10px;
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: 13px;
   cursor: pointer;
   color: #f0f0f3;
   font-family: var(--font-display, 'Outfit'), sans-serif;
@@ -662,7 +628,7 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.top-controls-row { display: flex; gap: 12px; align-items: center; }
+.top-controls-row { display: flex; gap: 8px; align-items: center; }
 
 .loopbtn {
   flex: 1;

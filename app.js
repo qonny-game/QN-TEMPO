@@ -59,7 +59,6 @@
   const playToggle = document.getElementById('playToggle');
   const playIcon = document.getElementById('playIcon');
   const soundToggleBtn = document.getElementById('soundToggleBtn');
-  const soundToggleLabel = document.getElementById('soundToggleLabel');
 
   const sigToggleBtn = document.getElementById('sigToggleBtn');
   const sigToggleValue = document.getElementById('sigToggleValue');
@@ -243,11 +242,26 @@
 
   function setBpm(v) {
     v = Math.max(30, Math.min(260, Math.round(v)));
+    if (v === state.bpm) return;
     state.bpm = v;
     bpmVal.textContent = v;
     bpmSlider.value = v;
     tempoNameEl.textContent = tempoName(v);
     updateFillVar();
+    if (state.playing) rebaseSchedule();
+  }
+
+  // BPM変更時、「今まさに鳴ろうとしている次の拍」の時刻はそのまま据え置き、
+  // それより先の間隔だけを新しいBPMで組み直す。これをしないと、スライダーを
+  // 素早く動かした時に古いBPMで埋まっていたキューと新しいBPMの間隔が食い違い、
+  // 音が詰まって連打されたように鳴り続けてしまう。
+  function rebaseSchedule() {
+    if (scheduledQueue.length > 0) {
+      nextNoteTime = scheduledQueue[scheduledQueue.length - 1].time + secondsPerBeat();
+    }
+    // まだ鳴っていない予約分は全て破棄し、次の拍から新テンポで再構築する
+    const ctx = ensureCtx();
+    if (nextNoteTime < ctx.currentTime) nextNoteTime = ctx.currentTime + 0.05;
   }
 
   bpmSlider.addEventListener('input', () => setBpm(parseInt(bpmSlider.value, 10)));
@@ -258,20 +272,41 @@
   bpmMinus2.addEventListener('click', () => stepBpm(-1));
   bpmPlus2.addEventListener('click', () => stepBpm(1));
 
-  let holdInterval = null;
+  // 各ボタンごとに独立したタイマーを持たせる（グローバル共有にすると、
+  // 別のボタンに触れた拍子に前のタイマーの参照が失われて止まらなくなるため）。
+  const holdStoppers = [];
   function attachHold(btn, dir) {
-    const start = () => { holdInterval = setInterval(() => setBpm(state.bpm + dir), 90); };
-    const stop = () => clearInterval(holdInterval);
-    btn.addEventListener('touchstart', () => { setTimeout(start, 350); }, { passive: true });
-    btn.addEventListener('touchend', stop);
-    btn.addEventListener('mousedown', () => { setTimeout(start, 350); });
-    btn.addEventListener('mouseup', stop);
-    btn.addEventListener('mouseleave', stop);
+    let holdTimeout = null;
+    let holdInterval = null;
+    const clearAll = () => {
+      clearTimeout(holdTimeout);
+      clearInterval(holdInterval);
+      holdTimeout = null;
+      holdInterval = null;
+    };
+    const start = () => {
+      clearAll();
+      holdTimeout = setTimeout(() => {
+        holdInterval = setInterval(() => setBpm(state.bpm + dir), 90);
+      }, 350);
+    };
+    btn.addEventListener('touchstart', start, { passive: true });
+    btn.addEventListener('touchend', clearAll);
+    btn.addEventListener('touchcancel', clearAll);
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', clearAll);
+    btn.addEventListener('mouseleave', clearAll);
+    holdStoppers.push(clearAll);
   }
   attachHold(bpmMinus, -1);
   attachHold(bpmPlus, 1);
   attachHold(bpmMinus2, -1);
   attachHold(bpmPlus2, 1);
+
+  // どこであれ指を離した瞬間、念のため全ボタンのホールドタイマーを止める保険。
+  // （タッチが要素の外へ流れて touchend/mouseup が正しく発火しないケースへの対策）
+  window.addEventListener('touchend', () => holdStoppers.forEach(stop => stop()), { passive: true });
+  window.addEventListener('mouseup', () => holdStoppers.forEach(stop => stop()));
 
   // ---------- TAP tempo ----------
   let tapTimes = [];
@@ -410,7 +445,7 @@
   soundToggleBtn.addEventListener('click', () => {
     hapticTap();
     state.soundKind = (state.soundKind + 1) % 3;
-    soundToggleLabel.textContent = SOUND_LABELS[state.soundKind];
+    soundToggleBtn.title = `音色を切り替え（${SOUND_LABELS[state.soundKind]}）`;
     soundToggleBtn.classList.toggle('active', state.soundKind !== 0);
   });
 
