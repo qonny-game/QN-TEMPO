@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 1.0.0</title>
+<title>QN TEMPO 0.1.1</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="appHeader">
-  <h1 id="appLogo">QN TEMPO <span id="appVersion">v1.0.0</span></h1>
+  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.1.1</span></h1>
   <button id="soundToggleBtn" title="音色を切り替え">
     <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
     <span id="soundToggleLabel">クリック</span>
@@ -68,7 +68,7 @@
         <button id="subdivToggleBtn" class="av-toggle-btn" title="分割">
           <svg viewBox="0 0 24 24"><path d="M4 4h4v16H4V4zm6 4h4v12h-4V8zm6-6h4v18h-4V2z"/></svg>
           <span class="av-toggle-btn-text">
-            <span class="av-toggle-btn-value" id="subdivToggleValue">通常</span>
+            <span class="av-toggle-btn-value" id="subdivToggleValue">4分</span>
             <span class="av-toggle-btn-label">分割</span>
           </span>
         </button>
@@ -89,17 +89,25 @@
 <div class="av-popup-backdrop" id="subdivBackdrop"></div>
 <div class="av-popup" id="subdivPopup">
   <p class="popup-title">拍の分割（全拍に適用）</p>
-  <div class="subdiv-choice-row">
-    <div class="subdiv-choice selected" data-subdiv="straight">
-      <span class="sd-label">通常</span>
+  <div class="subdiv-choice-row" id="subdivChoiceRow">
+    <div class="subdiv-choice selected" data-subdiv="quarter">
+      <span class="sd-label">4分</span>
       <span class="sd-dots"><i></i></span>
     </div>
-    <div class="subdiv-choice" data-subdiv="triplet">
-      <span class="sd-label">3連</span>
+    <div class="subdiv-choice" data-subdiv="eighth">
+      <span class="sd-label">8分</span>
+      <span class="sd-dots"><i></i><i></i></span>
+    </div>
+    <div class="subdiv-choice" data-subdiv="sixteenth">
+      <span class="sd-label">16分</span>
+      <span class="sd-dots"><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="subdiv-choice" data-subdiv="eighth-triplet">
+      <span class="sd-label">8分3連</span>
       <span class="sd-dots"><i></i><i></i><i></i></span>
     </div>
-    <div class="subdiv-choice" data-subdiv="triplet-hollow">
-      <span class="sd-label">3連中抜き</span>
+    <div class="subdiv-choice" data-subdiv="eighth-triplet-hollow">
+      <span class="sd-label">8分3連中抜き</span>
       <span class="sd-dots"><i></i><i class="ghost"></i><i></i></span>
     </div>
   </div>

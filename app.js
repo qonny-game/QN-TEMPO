@@ -7,13 +7,18 @@
   function hapticSuccess() { if (navigator.vibrate) navigator.vibrate([15, 40, 15]); }
 
   // ---------- State ----------
-  // subdivision: 'straight' (1音/拍) | 'triplet' (3連=3音均等) | 'triplet-hollow' (3連の中抜き=1,3音目のみ)
+  // subdivision（拍の分割）：
+  //   quarter                -> 4分（1音/拍）
+  //   eighth                 -> 8分（1拍2音均等）
+  //   sixteenth              -> 16分（1拍4音均等）
+  //   eighth-triplet         -> 8分3連（1拍3音均等）
+  //   eighth-triplet-hollow  -> 8分3連中抜き（3連の真ん中を鳴らさない、1・3音目のみ）
   const state = {
     bpm: 120,
     beatsPerBar: 4,
     accents: [true, false, false, false],
-    subdivisions: ['straight', 'straight', 'straight', 'straight'],
-    subdivKind: 'straight',
+    subdivisions: ['quarter', 'quarter', 'quarter', 'quarter'],
+    subdivKind: 'quarter',
     currentBeat: -1,
     playing: false,
     soundKind: 0, // 0: click 1: beep 2: wood
@@ -32,9 +37,11 @@
   }
 
   function slotsFor(kind) {
-    if (kind === 'triplet') return [true, true, true];
-    if (kind === 'triplet-hollow') return [true, false, true];
-    return [true];
+    if (kind === 'eighth') return [true, true];
+    if (kind === 'sixteenth') return [true, true, true, true];
+    if (kind === 'eighth-triplet') return [true, true, true];
+    if (kind === 'eighth-triplet-hollow') return [true, false, true];
+    return [true]; // quarter
   }
 
   // ---------- DOM refs ----------
@@ -90,7 +97,7 @@
       n.textContent = i + 1;
       dot.appendChild(n);
 
-      const slots = slotsFor(state.subdivisions[i] || 'straight');
+      const slots = slotsFor(state.subdivisions[i] || 'quarter');
       if (slots.length > 1) {
         const ticks = document.createElement('span');
         ticks.className = 'subticks';
@@ -184,7 +191,13 @@
   subdivCloseBtn.addEventListener('click', () => { hapticTap(); closePopup(subdivPopup, subdivBackdrop); });
   subdivBackdrop.addEventListener('click', () => closePopup(subdivPopup, subdivBackdrop));
 
-  const SUBDIV_LABELS = { straight: '通常', triplet: '3連', 'triplet-hollow': '中抜き' };
+  const SUBDIV_LABELS = {
+    quarter: '4分',
+    eighth: '8分',
+    sixteenth: '16分',
+    'eighth-triplet': '8分3連',
+    'eighth-triplet-hollow': '8分3連中抜き',
+  };
   subdivChoices.forEach(choice => {
     choice.addEventListener('click', () => {
       hapticTap();
@@ -301,7 +314,7 @@
     const ctx = ensureCtx();
     while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
       const beatAccented = !!state.accents[beatIndex];
-      const slots = slotsFor(state.subdivisions[beatIndex] || 'straight');
+      const slots = slotsFor(state.subdivisions[beatIndex] || 'quarter');
       const beatDur = secondsPerBeat();
       const slotDur = beatDur / slots.length;
 
