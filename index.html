@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 0.9.1</title>
+<title>QN TEMPO 1.0.0</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.9.1</span></h1>
+    <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v1.0.0</span></h1>
   </div>
   <div id="headerControls">
     <div class="header-btn-wrapper">
-      <button id="presetBtn" title="プリセットを保存・呼び出し">
+      <button id="presetBtn" title="Save / load presets">
         <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
         <span>PRESET</span>
       </button>
@@ -23,24 +23,22 @@
 </div>
 
 <div class="stage-wrap">
-  <div class="stage">
-    <div class="stage-meta">
-      <span class="stage-meta-label">Beat</span>
-      <span class="stage-meta-value" id="beatCounter">1<span class="stage-meta-total">/ 4</span></span>
-    </div>
+  <div class="stage-meta">
+    <span class="stage-meta-label">BEAT</span>
+    <span class="stage-meta-value" id="beatCounter">1<span class="stage-meta-total">/ 4</span></span>
 
-    <div class="beats-seq" id="beatsSeq"></div>
+    <button id="sigToggleBtn" class="meta-inline-btn" title="Time signature">
+      <span id="sigToggleValue">4/4</span>
+      <svg viewBox="0 0 24 24" class="chevron"><path d="M7 10l5 5 5-5z"/></svg>
+    </button>
 
-    <div class="stage-settings-row">
-      <button id="sigToggleBtn" class="av-toggle-btn" title="拍子">
-        <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm0 8h18v2H3v-2zm0 8h18v2H3v-2z"/></svg>
-        <span class="av-toggle-btn-text">
-          <span class="av-toggle-btn-value" id="sigToggleValue">4/4</span>
-          <span class="av-toggle-btn-label">拍子</span>
-        </span>
-      </button>
+    <div class="meta-div-toggle" id="metaDivToggle">
+      <button type="button" class="meta-div-btn" data-division="sixteenth">ALL 16</button>
+      <button type="button" class="meta-div-btn" data-division="eighthTriplet">ALL 3</button>
     </div>
   </div>
+
+  <div class="beats-seq" id="beatsSeq"></div>
 </div>
 
 <div class="time-controls-row" style="margin-top:10px;">
@@ -55,58 +53,58 @@
 
 <div class="bpm-panel-box">
   <div class="bpm-stepper-row">
-    <button class="step-btn" id="bpmMinus" title="BPMを下げる">−</button>
+    <button class="step-btn" id="bpmMinus" title="Decrease BPM">−</button>
     <div class="bpm-preset-grid" id="bpmPresetGrid"></div>
-    <button class="step-btn" id="bpmPlus" title="BPMを上げる">＋</button>
+    <button class="step-btn" id="bpmPlus" title="Increase BPM">＋</button>
   </div>
   <div class="tap-readout-row">
-    <span class="tap-readout">TAPで測定：<b id="tapReadout">—</b></span>
+    <span class="tap-readout">TAP to measure: <b id="tapReadout">—</b></span>
   </div>
 </div>
 
-<!-- 拍子ピッカー -->
+<!-- Time signature picker -->
 <div class="av-popup-backdrop" id="sigBackdrop"></div>
 <div class="av-popup" id="sigPopup">
-  <p class="popup-title">拍子を選択</p>
+  <p class="popup-title">Time Signature</p>
   <div class="choice-grid" id="sigGrid"></div>
-  <button class="popup-close-btn" id="sigCloseBtn">決定</button>
+  <button class="popup-close-btn" id="sigCloseBtn">Done</button>
 </div>
 
-<!-- 音色ピッカー（段の音色ボタンをタップすると開く。全拍共通の音色＋分割をまとめて設定） -->
+<!-- Sound picker (opens from a row's sound button. Sets sound + division for all beats in that row) -->
 <div class="av-popup-backdrop" id="soundPickBackdrop"></div>
 <div class="av-popup" id="soundPickPopup">
-  <p class="popup-title"><span id="soundPickTitle">1段目</span>の設定（全拍共通）</p>
+  <p class="popup-title"><span id="soundPickTitle">Row 1</span> Settings (all beats)</p>
   <div class="sound-choice-grid" id="soundChoiceGrid"></div>
-  <p class="popup-subtitle">分割</p>
+  <p class="popup-subtitle">Division</p>
   <div class="div-choice-row" id="divChoiceRow"></div>
-  <button class="popup-close-btn" id="soundPickCloseBtn">決定</button>
+  <button class="popup-close-btn" id="soundPickCloseBtn">Done</button>
 </div>
 
-<!-- プリセット保存・呼び出し -->
+<!-- Presets -->
 <div class="av-popup-backdrop" id="presetBackdrop"></div>
 <div class="av-popup" id="presetPopup">
-  <p class="popup-title">プリセット</p>
+  <p class="popup-title">Presets</p>
 
   <div class="preset-save-row">
-    <input type="text" id="presetNameInput" class="preset-name-input" placeholder="プリセット名" maxlength="20">
-    <button class="preset-save-btn" id="presetSaveBtn">保存</button>
+    <input type="text" id="presetNameInput" class="preset-name-input" placeholder="Preset name" maxlength="20">
+    <button class="preset-save-btn" id="presetSaveBtn">Save</button>
   </div>
 
   <div class="preset-list" id="presetList"></div>
 
-  <button class="popup-close-btn" id="presetCloseBtn">閉じる</button>
+  <button class="popup-close-btn" id="presetCloseBtn">Close</button>
 </div>
 
 <!-- 下部固定トランスポート（QNAUDIOのtop-controlsに準拠） -->
 <div class="top-controls" id="topControls">
   <div class="top-controls-row">
-    <div class="tripleNavBtn" title="BPM操作 / 再生">
+    <div class="tripleNavBtn" title="BPM / Play">
       <button id="bpmMinus2" class="tripleNavBtn-third tripleNavBtn-left" title="BPM -1">
         <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
         <span class="top-controls-btn-label">BPM</span>
       </button>
       <span class="tripleNavBtn-divider"></span>
-      <button id="playToggle" class="tripleNavBtn-third tripleNavBtn-center" title="再生 / 停止">
+      <button id="playToggle" class="tripleNavBtn-third tripleNavBtn-center" title="Play / Stop">
         <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         <span class="top-controls-btn-label">Play</span>
       </button>
@@ -116,7 +114,7 @@
         <span class="top-controls-btn-label">BPM</span>
       </button>
     </div>
-    <button id="tapBtn" class="loopbtn" title="TAPテンポ">
+    <button id="tapBtn" class="loopbtn" title="TAP tempo">
       <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
       <span class="top-controls-btn-label">Tap</span>
     </button>

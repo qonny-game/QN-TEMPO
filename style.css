@@ -142,20 +142,11 @@ body {
   margin-top: 6px;
 }
 
-.stage {
-  width: 100%;
-  background: linear-gradient(180deg, #17171d 0%, #131318 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 20px 16px 16px;
-  box-sizing: border-box;
-}
-
 .stage-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 18px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .stage-meta-label {
@@ -182,23 +173,61 @@ body {
   margin-left: 3px;
 }
 
-/* ---------- Step sequencer: 3-layer beat blocks ---------- */
+/* 拍数プルダウン（タップでポップアップ）。BEATヘッダー行の中にインラインで置く。 */
+.meta-inline-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 8px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8c8d0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.meta-inline-btn:active { transform: scale(0.95); }
+.meta-inline-btn .chevron { width: 14px; height: 14px; fill: currentColor; opacity: 0.6; }
+
+/* ALL 16 / ALL 3 トグル：全行を一括で分割変更する */
+.meta-div-toggle {
+  display: flex;
+  margin-left: auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.meta-div-btn {
+  padding: 6px 9px;
+  background: #1c1c24;
+  color: #6b6b7b;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: none;
+}
+.meta-div-btn:active { transform: scale(0.95); }
+.meta-div-btn.selected { background: var(--accent-primary); color: #fff; }
+
 /* ---------- Step sequencer: table layout ---------- */
 /* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
    [拍ごとのパターン本体]。1行あたり最大4拍分を表示し、5拍目以降は次の行に
-   折り返す（1-4拍で1段、5-8拍で1段）。画面内に収まるよう、マスは横スクロール
-   させず、余白なく均等に横幅いっぱいへ広げる。 */
+   折り返す（1-4拍で1段、5-8拍で1段）。外枠パネルは持たず、画面幅いっぱいに
+   広げる。マス同士・拍の境目も隙間ゼロでフラットに連結する。 */
 .beats-seq {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   padding: 2px 0 16px;
 }
 
 .seq-row-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .seq-row {
@@ -233,13 +262,12 @@ body {
 }
 
 /* 本体：1行分（最大4拍）のセルが横一列に並び、余白なく均等に画面幅いっぱいへ
-   広がる。横スクロールはしない。拍の境目は縦線だけで仕切る。 */
+   広がる。マス・拍の境目とも隙間ゼロでフラットに連結する（角丸なし）。 */
 .seq-track {
   flex: 1;
   min-width: 0;
   display: flex;
   gap: 0;
-  border-radius: 10px;
   background: #17171d;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -250,18 +278,18 @@ body {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: 4px 3px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 .seq-beat-cell:last-child { border-right: none; }
 
 /* ステップ本体：段のマス数（3 or 4）に関わらず、1拍分の幅は常に同じになるよう
    grid-template-columnsをJS側で動的に指定する（LCM(3,4)=12を基準単位とし、
    3マスの行は1マス=4単位、4マスの行は1マス=3単位で描く）。これにより行ごとに
-   マス数が違っても、拍の境目（縦線）は必ず揃う。 */
+   マス数が違っても、拍の境目は必ず揃う。マス同士は隙間ゼロ、角丸なしで連結する。 */
 .layer-steps {
   display: grid;
-  gap: 3px;
+  gap: 0;
   flex: 1;
   min-width: 0;
   width: 100%;
@@ -270,21 +298,22 @@ body {
   width: 100%;
   height: 44px;
   min-width: 0;
-  border-radius: 6px;
+  border-radius: 0;
   background: #26262f;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  transition: background 0.1s var(--ease-snap), border-color 0.1s var(--ease-snap), transform 0.08s var(--ease-snap);
+  transition: background 0.1s var(--ease-snap), transform 0.08s var(--ease-snap);
 }
-.layer-step:active { transform: scale(0.88); }
+.layer-step:last-child { border-right: none; }
+.layer-step:active { transform: scale(0.94); }
 .layer-step.on {
   background: var(--snd-color, var(--accent-primary));
-  border-color: var(--snd-color, var(--accent-primary));
 }
 
 /* 再生中、今鳴っているステップのマスだけ強く光らせる（アプリの主役の瞬間） */
 .layer-step.playing {
-  box-shadow: 0 0 0 2px #fff, 0 0 14px rgba(255,255,255,0.7);
+  box-shadow: inset 0 0 0 2px #fff, 0 0 14px rgba(255,255,255,0.7);
 }
 
 /* 今再生中の拍のセルを軽くハイライトする */
@@ -409,68 +438,6 @@ body {
   background: var(--accent-glow);
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-}
-
-/* ---------- Stage settings row (Time Sig / Subdivision toggle buttons) ---------- */
-/* BEATステージの中に統合し、テンポ表示との視覚的な距離を縮める */
-.stage-settings-row {
-  display: flex;
-  gap: 6px;
-  width: 100%;
-  margin-top: 4px;
-}
-
-.av-toggle-btn {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 68px;
-  box-sizing: border-box;
-  padding: 12px 6px;
-  background: #1c1c24;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 13px;
-  cursor: pointer;
-  color: #f0f0f3;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-}
-.av-toggle-btn:active { transform: scale(0.97); }
-.av-toggle-btn.active {
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-.av-toggle-btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
-
-.av-toggle-btn-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-  min-width: 0;
-}
-.av-toggle-btn-value {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: inherit;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 40vw;
-}
-.av-toggle-btn-label {
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: inherit;
-  opacity: 0.65;
 }
 
 /* ---------- Popups (Time Sig picker / Subdivision picker) ---------- */

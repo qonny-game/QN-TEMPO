@@ -6,22 +6,22 @@
   function hapticTick() { if (navigator.vibrate) navigator.vibrate(6); }
   function hapticSuccess() { if (navigator.vibrate) navigator.vibrate([15, 40, 15]); }
 
-  // ---------- Sound pairs (6ペア=12音) ----------
-  // 各ペアはA/Bの2音を持つ。マスは OFF → A → B → OFF と循環する3状態。
-  // 音色選択ではペア単位（例：バス）を選び、A/Bは選ばせない。
-  // pitch は bass/snare/hihat の音の高さ調整に使う倍率（1.0が基準）。
+  // ---------- Sound pairs (6 pairs = 12 sounds) ----------
+  // Each pair has A/B sounds. A cell cycles OFF → A → B → OFF.
+  // The picker lets you choose a pair (e.g. Bass) — not A/B individually.
+  // pitch adjusts the pitch of bass/snare/hihat (1.0 = base).
   const SOUND_PAIRS = {
-    bass:   { label: 'バス',       kind: 'bass',
+    bass:   { label: 'Bass',   kind: 'bass',
               A: { color: '#ef4444', pitch: 1.0 }, B: { color: '#fca5a5', pitch: 1.5 } },
-    snare:  { label: 'スネア',     kind: 'snare',
+    snare:  { label: 'Snare',  kind: 'snare',
               A: { color: '#f59e0b', pitch: 1.0 }, B: { color: '#fcd34d', pitch: 1.3 } },
-    hihat:  { label: 'ハット',     kind: 'hihat',
+    hihat:  { label: 'Hat',    kind: 'hihat',
               A: { color: '#eab308', pitch: 1.0, dur: 0.06 }, B: { color: '#fde047', pitch: 1.0, dur: 0.15 } },
-    click:  { label: 'クリック',   kind: 'click',
+    click:  { label: 'Click',  kind: 'click',
               A: { color: '#3b82f6', freq: 1500 }, B: { color: '#93c5fd', freq: 1000 } },
-    beep:   { label: 'ビープ',     kind: 'beep',
+    beep:   { label: 'Beep',   kind: 'beep',
               A: { color: '#22d3ee', freq: 1760 }, B: { color: '#a5f3fc', freq: 880 } },
-    clave:  { label: 'クラベス',   kind: 'clave',
+    clave:  { label: 'Clave',  kind: 'clave',
               A: { color: '#a78bfa', freq: 1400 }, B: { color: '#ddd6fe', freq: 900 } },
   };
   const SOUND_PAIR_ORDER = ['bass', 'snare', 'hihat', 'click', 'beep', 'clave'];
@@ -34,8 +34,8 @@
 
   // ---------- Division kinds ----------
   const DIVISIONS = {
-    sixteenth:      { steps: 4, label: '16分' },
-    eighthTriplet:  { steps: 3, label: '8分3連' },
+    sixteenth:      { steps: 4, label: '16th' },
+    eighthTriplet:  { steps: 3, label: '8th Triplet' },
   };
 
   // 行ごとにマス数が違っても、拍の境目（表示上の縦線）を必ず揃えるための基準値。
@@ -193,6 +193,8 @@
   const sigGrid = document.getElementById('sigGrid');
   const sigCloseBtn = document.getElementById('sigCloseBtn');
 
+  const metaDivToggle = document.getElementById('metaDivToggle');
+
   const soundPickPopup = document.getElementById('soundPickPopup');
   const soundPickBackdrop = document.getElementById('soundPickBackdrop');
   const soundPickTitle = document.getElementById('soundPickTitle');
@@ -256,7 +258,7 @@
     if (list.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'preset-empty';
-      empty.textContent = 'まだ保存されたプリセットはありません';
+      empty.textContent = 'No presets saved yet';
       presetList.appendChild(empty);
       return;
     }
@@ -267,7 +269,7 @@
       const name = document.createElement('span');
       name.className = 'preset-row-name';
       name.textContent = preset.name;
-      name.title = 'タップして読み込み';
+      name.title = 'Tap to load';
       name.addEventListener('click', () => {
         hapticSuccess();
         applySerializedState(preset);
@@ -287,7 +289,7 @@
       delBtn.type = 'button';
       delBtn.className = 'preset-row-delete';
       delBtn.textContent = '×';
-      delBtn.title = '削除';
+      delBtn.title = 'Delete';
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         hapticTick();
@@ -319,6 +321,7 @@
       beatsSeq.appendChild(groupEl);
     }
     updateBeatCounter();
+    updateMetaDivToggle();
     saveWorkingState();
   }
 
@@ -333,7 +336,7 @@
     const soundBtn = document.createElement('button');
     soundBtn.type = 'button';
     soundBtn.className = 'layer-sound-btn';
-    soundBtn.title = `${layerIndex + 1}段目：${pair.label}（タップで音色・分割を変更）`;
+    soundBtn.title = `Row ${layerIndex + 1}: ${pair.label} (tap to change sound/division)`;
     soundBtn.innerHTML = `<span class="sound-dot-pair"><i style="background:${pair.A.color}"></i><i style="background:${pair.B.color}"></i></span>`;
     soundBtn.addEventListener('click', () => openSoundPicker(layerIndex));
     rowEl.appendChild(soundBtn);
@@ -383,6 +386,26 @@
     beatCounter.innerHTML = `${shown}<span class="stage-meta-total">/ ${state.beatsPerBar}</span>`;
   }
 
+  // ---------- ALL 16 / ALL 3 toggle (applies the chosen division to every row at once) ----------
+  function updateMetaDivToggle() {
+    const allSame = state.rows.every(r => r.division === state.rows[0].division);
+    metaDivToggle.querySelectorAll('.meta-div-btn').forEach(btn => {
+      btn.classList.toggle('selected', allSame && btn.dataset.division === state.rows[0].division);
+    });
+  }
+
+  metaDivToggle.querySelectorAll('.meta-div-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      hapticTap();
+      const divKey = btn.dataset.division;
+      state.rows.forEach(row => {
+        row.division = divKey;
+        row.pattern = new Array(DIVISIONS[divKey].steps * state.beatsPerBar).fill('off');
+      });
+      renderBeats();
+    });
+  });
+
   // ---------- 音色ミニピッカー（段の音色ボタンをタップして開く。音色(ペア単位)＋分割を
   // まとめて設定する。決定ボタンを押すまでポップアップは閉じない。） ----------
   SOUND_PAIR_ORDER.forEach(key => {
@@ -423,7 +446,7 @@
   function openSoundPicker(layerIndex) {
     activeSoundLayerIndex = layerIndex;
     const row = state.rows[layerIndex];
-    soundPickTitle.textContent = `${layerIndex + 1}段目`;
+    soundPickTitle.textContent = `Row ${layerIndex + 1}`;
     soundChoiceGrid.querySelectorAll('.sound-choice-cell').forEach(c => {
       c.classList.toggle('selected', c.dataset.sound === row.sound);
     });
@@ -446,7 +469,7 @@
   // ---------- Time signature popup ----------
   function presetLabelFor(n) {
     const map = { 2: '2/4', 3: '3/4', 4: '4/4', 6: '6/8', 8: '8/8' };
-    return map[n] || `${n}拍`;
+    return map[n] || `${n}/4`;
   }
 
   function setBeatsPerBar(n) {
