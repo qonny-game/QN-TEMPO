@@ -140,134 +140,113 @@ body {
   margin-left: 3px;
 }
 
-.beats {
+/* ---------- Step sequencer: 3-layer beat blocks ---------- */
+/* ---------- Step sequencer: table layout ---------- */
+/* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
+   [拍ごとのパターン本体]。1行あたり最大4拍分を表示し、5拍目以降は次の行に
+   折り返す（1-4拍で1段、5-8拍で1段）。画面内に収まるよう、マスは横スクロール
+   させず、余白なく均等に横幅いっぱいへ広げる。 */
+.beats-seq {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
-  row-gap: 16px;
-  flex-wrap: wrap;
-  padding: 4px 0 18px;
+  padding: 2px 0 16px;
 }
 
-/* タップ領域は大きく、見た目のドットは中に置く二重構造。
-   親(.beat-dot)が指のヒットエリア、子(.beat-dot-face)が実際の見た目。
-   こうすることで小節数が増えて円が縮んでも、タップのしやすさへの
-   影響を最小限にできる。 */
-.beat-dot {
-  flex: 1 1 0;
-  max-width: 76px;
-  min-width: 44px;
-  aspect-ratio: 1 / 1;
+.seq-row-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seq-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+/* 左端の音色ボタン。3行とも同じ幅に揃える。 */
+.layer-sound-btn {
+  flex-shrink: 0;
+  width: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  cursor: pointer;
-}
-
-.beat-dot-face {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+  border-radius: 10px;
   background: #1c1c24;
-  border: 2px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap);
+}
+.layer-sound-btn:active { transform: scale(0.94); }
+.layer-sound-btn .sound-dot-pair {
+  display: flex;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.layer-sound-btn .sound-dot-pair i {
+  flex: 1;
+  display: block;
+}
+
+/* 本体：1行分（最大4拍）のセルが横一列に並び、余白なく均等に画面幅いっぱいへ
+   広がる。横スクロールはしない。拍の境目は縦線だけで仕切る。 */
+.seq-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  background: #17171d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.seq-beat-cell {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: transform 0.12s var(--ease-snap), background var(--dur-hover) var(--ease-snap),
-              border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap);
+  padding: 4px 3px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
+.seq-beat-cell:last-child { border-right: none; }
 
-.beat-dot .n {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: #4d4d58;
-  transition: color var(--dur-hover) var(--ease-snap);
-}
-
-/* --- 強拍：塗りつぶし＋アクセントカラーで一目瞭然にする（枠線の濃淡だけに頼らない） --- */
-.beat-dot.accent .beat-dot-face {
-  background: linear-gradient(150deg, #2a2f3d, #1c1f28);
-  border-color: var(--accent-primary);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
-}
-.beat-dot.accent .n { color: var(--accent-primary); }
-
-/* 強拍だけ左上に小さな三角マーク（アクセント記号 > のようなもの）を added し、
-   「ここが強拍」という情報を色以外の形でも伝える（色覚に依存しない設計）。 */
-.beat-dot.accent .accent-mark {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 6px solid var(--accent-primary);
-  opacity: 0.85;
-}
-
-/* --- タップ中のフィードバック（押した瞬間、はっきり沈む） --- */
-.beat-dot.pressed .beat-dot-face {
-  transform: scale(0.88);
-}
-
-/* --- 実際に音が鳴った瞬間：弾む＋強く光る。ここがアプリの主役の瞬間なので、
-       他のどのアニメーションよりも派手にする。 --- */
-.beat-dot.active .beat-dot-face {
-  animation: beatPulse 0.28s var(--ease-pop);
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 6px var(--accent-glow), 0 0 28px var(--accent-glow);
-}
-.beat-dot.active .n { color: #fff; }
-.beat-dot.active .accent-mark { border-top-color: #fff; opacity: 1; }
-
-.beat-dot.active.accent .beat-dot-face {
-  background: #ffffff;
-  border-color: #ffffff;
-  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.25), 0 0 34px rgba(255, 255, 255, 0.55);
-}
-.beat-dot.active.accent .n { color: #0d0d0f; }
-
-@keyframes beatPulse {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.22); }
-  100% { transform: scale(1.1); }
-}
-.beat-dot.active { transform: scale(1); }
-.beat-dot.active .beat-dot-face { transform: scale(1.1); }
-
-/* --- 拍の分割（subdivision）：小さい点ではなく、拍の輪の下側に
-       弧を描くセグメントとして見せる。今どのタイミングで音が鳴るか
-       ("・タ・タ" のような間隔)が、記号の羅列より直感的に伝わる。 --- */
-.beat-dot .subticks {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
+/* ステップ本体：段のマス数（3 or 4）に関わらず、1拍分の幅は常に同じになるよう
+   grid-template-columnsをJS側で動的に指定する（LCM(3,4)=12を基準単位とし、
+   3マスの行は1マス=4単位、4マスの行は1マス=3単位で描く）。これにより行ごとに
+   マス数が違っても、拍の境目（縦線）は必ず揃う。 */
+.layer-steps {
+  display: grid;
   gap: 3px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
 }
-.beat-dot .subticks i {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  display: block;
-  transition: background 0.1s ease, box-shadow 0.1s ease;
+.layer-step {
+  width: 100%;
+  height: 30px;
+  min-width: 0;
+  border-radius: 6px;
+  background: #26262f;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 0.1s var(--ease-snap), border-color 0.1s var(--ease-snap), transform 0.08s var(--ease-snap);
 }
-.beat-dot.active .subticks i { background: rgba(255, 255, 255, 0.3); }
-.beat-dot .subticks i.hit.lit {
-  background: #fff;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+.layer-step:active { transform: scale(0.88); }
+.layer-step.on {
+  background: var(--snd-color, var(--accent-primary));
+  border-color: var(--snd-color, var(--accent-primary));
 }
-.beat-dot .subticks i.ghost-tick {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+
+/* 再生中、今鳴っているステップのマスだけ強く光らせる（アプリの主役の瞬間） */
+.layer-step.playing {
+  box-shadow: 0 0 0 2px #fff, 0 0 14px rgba(255,255,255,0.7);
 }
+
+/* 今再生中の拍のセルを軽くハイライトする */
+.seq-beat-cell.active { background: rgba(59, 130, 246, 0.1); }
 
 .stage-hint {
   text-align: center;
@@ -361,56 +340,40 @@ body {
 }
 .step-btn:active { transform: scale(0.94); background: var(--accent-glow); border-color: var(--accent-primary); color: var(--accent-primary); }
 
-.bpm-slider-wrap { flex: 1; min-width: 0; }
+.bpm-preset-grid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
 
-input[type="range"]#bpmSlider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 34px;
-  background: transparent;
-  margin: 0;
+.bpm-preset-btn {
+  padding: 10px 2px;
+  text-align: center;
+  border-radius: 10px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b8b9e;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
-  accent-color: var(--accent-primary);
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
-input[type="range"]#bpmSlider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) var(--fill, 50%), #2a2a35 var(--fill, 50%), #2a2a35 100%);
-}
-input[type="range"]#bpmSlider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px; height: 20px;
-  margin-top: -8px;
-  border-radius: 50%;
-  background: var(--accent-primary);
-  box-shadow: 0 0 6px var(--accent-glow);
-  border: 3px solid #0d0d0f;
-}
-input[type="range"]#bpmSlider::-moz-range-track {
-  height: 4px; border-radius: 2px; background: #2a2a35;
-}
-input[type="range"]#bpmSlider::-moz-range-progress {
-  height: 4px; border-radius: 2px; background: var(--accent-primary);
-}
-input[type="range"]#bpmSlider::-moz-range-thumb {
-  width: 14px; height: 14px; border: none; border-radius: 50%;
-  background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow);
-}
-
-.bpm-marks {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 2px;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
-  font-size: 9px;
-  color: #6b6b7b;
+.bpm-preset-btn:active { transform: scale(0.94); }
+.bpm-preset-btn.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 /* ---------- Stage settings row (Time Sig / Subdivision toggle buttons) ---------- */
 /* BEATステージの中に統合し、テンポ表示との視覚的な距離を縮める */
 .stage-settings-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   margin-top: 4px;
 }
@@ -419,12 +382,13 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 50px;
+  gap: 6px;
+  min-height: 68px;
   box-sizing: border-box;
-  padding: 9px 10px;
+  padding: 12px 6px;
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 13px;
@@ -439,26 +403,29 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   border-color: var(--accent-primary);
   background: var(--accent-glow);
 }
-.av-toggle-btn svg { width: 17px; height: 17px; fill: currentColor; flex-shrink: 0; }
+.av-toggle-btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
 
 .av-toggle-btn-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   line-height: 1.2;
   min-width: 0;
 }
 .av-toggle-btn-value {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   color: inherit;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
 }
 .av-toggle-btn-label {
   font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   color: inherit;
   opacity: 0.65;
@@ -539,13 +506,14 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   color: var(--accent-primary);
 }
 
-.subdiv-choice-row {
+/* ---------- 音色ピッカー（段ごと） ---------- */
+.sound-choice-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 4px;
 }
-.subdiv-choice {
+.sound-choice-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -557,23 +525,64 @@ input[type="range"]#bpmSlider::-moz-range-thumb {
   cursor: pointer;
   transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap);
 }
-.subdiv-choice .sd-label {
+.sound-choice-cell .sc-dot-pair {
+  display: flex;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.sound-choice-cell .sc-dot-pair i {
+  flex: 1;
+  display: block;
+}
+.sound-choice-cell .sc-label {
   font-family: var(--font-display, 'Outfit'), sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: #8b8b9e;
-  letter-spacing: 0.2px;
   text-align: center;
-  line-height: 1.25;
-  white-space: nowrap;
+  line-height: 1.2;
 }
-.subdiv-choice .sd-dots { display: flex; gap: 5px; height: 7px; align-items: center; }
-.subdiv-choice .sd-dots i { width: 7px; height: 7px; border-radius: 50%; background: #6b6b7b; display: block; }
-.subdiv-choice .sd-dots i.ghost { background: transparent; border: 1px solid #6b6b7b; }
-.subdiv-choice.selected { background: var(--accent-glow); border-color: var(--accent-primary); }
-.subdiv-choice.selected .sd-label { color: var(--accent-primary); }
-.subdiv-choice.selected .sd-dots i { background: var(--accent-primary); }
-.subdiv-choice.selected .sd-dots i.ghost { border-color: var(--accent-primary); }
+.sound-choice-cell.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+}
+.sound-choice-cell.selected .sc-label { color: var(--accent-primary); }
+
+.popup-subtitle {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+  margin: 14px 0 8px;
+}
+
+/* 音色ピッカー内の分割選択（16分/8分3連）。この行全体に適用される。 */
+.div-choice-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.div-choice-cell {
+  padding: 13px 4px;
+  text-align: center;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8c8d0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+.div-choice-cell.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
 
 .popup-close-btn {
   width: 100%;

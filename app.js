@@ -6,25 +6,79 @@
   function hapticTick() { if (navigator.vibrate) navigator.vibrate(6); }
   function hapticSuccess() { if (navigator.vibrate) navigator.vibrate([15, 40, 15]); }
 
+  // ---------- Sound pairs (6ペア=12音) ----------
+  // 各ペアはA/Bの2音を持つ。マスは OFF → A → B → OFF と循環する3状態。
+  // 音色選択ではペア単位（例：バス）を選び、A/Bは選ばせない。
+  // pitch は bass/snare/hihat の音の高さ調整に使う倍率（1.0が基準）。
+  const SOUND_PAIRS = {
+    bass:   { label: 'バス',       kind: 'bass',
+              A: { color: '#ef4444', pitch: 1.0 }, B: { color: '#fca5a5', pitch: 1.5 } },
+    snare:  { label: 'スネア',     kind: 'snare',
+              A: { color: '#f59e0b', pitch: 1.0 }, B: { color: '#fcd34d', pitch: 1.3 } },
+    hihat:  { label: 'ハット',     kind: 'hihat',
+              A: { color: '#eab308', pitch: 1.0, dur: 0.06 }, B: { color: '#fde047', pitch: 1.0, dur: 0.15 } },
+    click:  { label: 'クリック',   kind: 'click',
+              A: { color: '#3b82f6', freq: 1500 }, B: { color: '#93c5fd', freq: 1000 } },
+    beep:   { label: 'ビープ',     kind: 'beep',
+              A: { color: '#22d3ee', freq: 1760 }, B: { color: '#a5f3fc', freq: 880 } },
+    clave:  { label: 'クラベス',   kind: 'clave',
+              A: { color: '#a78bfa', freq: 1400 }, B: { color: '#ddd6fe', freq: 900 } },
+  };
+  const SOUND_PAIR_ORDER = ['bass', 'snare', 'hihat', 'click', 'beep', 'clave'];
+
+  function soundVariant(pairKey, variant) {
+    // variant: 'A' or 'B'
+    const pair = SOUND_PAIRS[pairKey];
+    return { ...pair[variant], label: `${pair.label}${variant}`, kind: pair.kind };
+  }
+
+  // ---------- Division kinds ----------
+  const DIVISIONS = {
+    sixteenth:      { steps: 4, label: '16分' },
+    eighthTriplet:  { steps: 3, label: '8分3連' },
+  };
+
+  // 行ごとにマス数が違っても、拍の境目（表示上の縦線）を必ず揃えるための基準値。
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+  function lcm(a, b) { return (a * b) / gcd(a, b); }
+  const STEP_GRID_UNIT = Object.values(DIVISIONS).map(d => d.steps).reduce(lcm, 1);
+
+  // 行(段)は「分割は全拍共通で1つ」「パターンは拍数×マス数ぶんの通し配列」を持つ。
+  // 各マスは 'off' | 'A' | 'B' の3状態（タップで off→A→B→off と循環）。
+  function makeLayerRow(pairKey, divKey, beatsPerBar) {
+    const totalSteps = DIVISIONS[divKey].steps * beatsPerBar;
+    return {
+      sound: pairKey,
+      division: divKey,
+      pattern: new Array(totalSteps).fill('off'),
+    };
+  }
+
+  function nextCellState(s) {
+    if (s === 'off') return 'A';
+    if (s === 'A') return 'B';
+    return 'off';
+  }
+
   // ---------- State ----------
-  // subdivision（拍の分割）：
-  //   quarter                -> 4分（1音/拍）
-  //   eighth                 -> 8分（1拍2音均等）
-  //   sixteenth              -> 16分（1拍4音均等）
-  //   eighth-triplet         -> 8分3連（1拍3音均等）
-  //   eighth-triplet-hollow  -> 8分3連中抜き（3連の真ん中を鳴らさない、1・3音目のみ）
   const state = {
     bpm: 120,
     beatsPerBar: 4,
-    accents: [true, false, false, false],
-    subdivisions: ['quarter', 'quarter', 'quarter', 'quarter'],
-    subdivKind: 'quarter',
+    rows: [
+      makeLayerRow('hihat', 'sixteenth', 4),
+      makeLayerRow('snare', 'sixteenth', 4),
+      makeLayerRow('bass', 'sixteenth', 4),
+    ],
     currentBeat: -1,
     playing: false,
-    soundKind: 0, // 0: click 1: beep 2: wood
   };
+  // 何も鳴らないと不安になるため、1段目（ハット）の各拍頭にAを入れておく
+  for (let bi = 0; bi < state.beatsPerBar; bi++) {
+    const stepsPerBeat = DIVISIONS[state.rows[0].division].steps;
+    state.rows[0].pattern[bi * stepsPerBeat] = 'A';
+  }
 
-  const SOUND_LABELS = ['クリック', 'ビープ', 'ウッド'];
+  const BPM_PRESETS = [60, 80, 100, 120, 140, 160, 180, 200];
 
   const TEMPO_NAMES = [
     [40, 'Grave'], [50, 'Largo'], [60, 'Lento'], [66, 'Adagio'],
@@ -36,19 +90,11 @@
     return 'Prestissimo';
   }
 
-  function slotsFor(kind) {
-    if (kind === 'eighth') return [true, true];
-    if (kind === 'sixteenth') return [true, true, true, true];
-    if (kind === 'eighth-triplet') return [true, true, true];
-    if (kind === 'eighth-triplet-hollow') return [true, false, true];
-    return [true]; // quarter
-  }
-
   // ---------- DOM refs ----------
-  const beatsRow = document.getElementById('beatsRow');
+  const beatsSeq = document.getElementById('beatsSeq');
   const beatCounter = document.getElementById('beatCounter');
   const bpmVal = document.getElementById('bpmVal');
-  const bpmSlider = document.getElementById('bpmSlider');
+  const bpmPresetGrid = document.getElementById('bpmPresetGrid');
   const tempoNameEl = document.getElementById('tempoName');
   const bpmMinus = document.getElementById('bpmMinus');
   const bpmPlus = document.getElementById('bpmPlus');
@@ -58,7 +104,6 @@
   const tapReadout = document.getElementById('tapReadout');
   const playToggle = document.getElementById('playToggle');
   const playIcon = document.getElementById('playIcon');
-  const soundToggleBtn = document.getElementById('soundToggleBtn');
 
   const sigToggleBtn = document.getElementById('sigToggleBtn');
   const sigToggleValue = document.getElementById('sigToggleValue');
@@ -67,88 +112,108 @@
   const sigGrid = document.getElementById('sigGrid');
   const sigCloseBtn = document.getElementById('sigCloseBtn');
 
-  const subdivToggleBtn = document.getElementById('subdivToggleBtn');
-  const subdivToggleValue = document.getElementById('subdivToggleValue');
-  const subdivPopup = document.getElementById('subdivPopup');
-  const subdivBackdrop = document.getElementById('subdivBackdrop');
-  const subdivCloseBtn = document.getElementById('subdivCloseBtn');
-  const subdivChoices = document.querySelectorAll('.subdiv-choice');
+  const soundPickPopup = document.getElementById('soundPickPopup');
+  const soundPickBackdrop = document.getElementById('soundPickBackdrop');
+  const soundPickTitle = document.getElementById('soundPickTitle');
+  const soundChoiceGrid = document.getElementById('soundChoiceGrid');
+  const divChoiceRow = document.getElementById('divChoiceRow');
+  const soundPickCloseBtn = document.getElementById('soundPickCloseBtn');
 
   const topControls = document.getElementById('topControls');
   const topControlsSpacer = document.getElementById('topControlsSpacer');
 
-  // ---------- Spacer sync (QNAUDIOの固定フッター分の余白確保と同じ考え方) ----------
+  let activeSoundLayerIndex = null;
+
+  // ---------- Spacer sync ----------
   function syncSpacer() {
     topControlsSpacer.style.height = topControls.offsetHeight + 'px';
   }
   window.addEventListener('resize', syncSpacer);
 
-  // ---------- Render beats ----------
-  // タップ = アクセントのON/OFF切替（長押し不要、即座に反応するシンプル操作）。
-  // .beat-dot（当たり判定・大きめ）と .beat-dot-face（見た目の丸）を分離し、
-  // 拍数が増えて円が小さくなってもタップしやすさを保つ。
+  // ---------- Popup helpers ----------
+  function openPopup(popup, backdrop) {
+    hapticTap();
+    popup.classList.add('open');
+    backdrop.classList.add('open');
+  }
+  function closePopup(popup, backdrop) {
+    popup.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  const BEATS_PER_ROW_GROUP = 4;
+
+  // ---------- Render: beats-seq ----------
+  // 1グループ=最大4拍として、5拍目以降は次のグループ（次の行の並び）に折り返す。
+  // 各グループの中に3段（音色ボタン+パターン）を描画する。
   function renderBeats() {
-    beatsRow.innerHTML = '';
-    for (let i = 0; i < state.beatsPerBar; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'beat-dot' + (state.accents[i] ? ' accent' : '');
-      dot.dataset.index = i;
-
-      const face = document.createElement('div');
-      face.className = 'beat-dot-face';
-
-      const mark = document.createElement('span');
-      mark.className = 'accent-mark';
-      face.appendChild(mark);
-
-      const n = document.createElement('span');
-      n.className = 'n';
-      n.textContent = i + 1;
-      face.appendChild(n);
-
-      const slots = slotsFor(state.subdivisions[i] || 'quarter');
-      if (slots.length > 1) {
-        const ticks = document.createElement('span');
-        ticks.className = 'subticks';
-        slots.forEach(hit => {
-          const t = document.createElement('i');
-          t.className = hit ? 'hit' : 'ghost-tick';
-          ticks.appendChild(t);
-        });
-        face.appendChild(ticks);
-      }
-
-      dot.appendChild(face);
-      beatsRow.appendChild(dot);
-
-      const onDown = () => dot.classList.add('pressed');
-      const onUp = () => dot.classList.remove('pressed');
-      const onTap = () => {
-        state.accents[i] = !state.accents[i];
-        renderBeats();
-        hapticTick();
-      };
-      let touched = false;
-      dot.addEventListener('touchstart', onDown, { passive: true });
-      dot.addEventListener('touchend', (e) => {
-        touched = true;
-        onUp();
-        onTap();
-        e.preventDefault();
-      }, { passive: false });
-      dot.addEventListener('touchcancel', onUp);
-      dot.addEventListener('mousedown', onDown);
-      dot.addEventListener('mouseup', onUp);
-      dot.addEventListener('mouseleave', onUp);
-      dot.addEventListener('click', () => {
-        if (touched) { touched = false; return; } // タッチ端末でのclick二重発火を防止
-        onTap();
+    beatsSeq.innerHTML = '';
+    for (let groupStart = 0; groupStart < state.beatsPerBar; groupStart += BEATS_PER_ROW_GROUP) {
+      const groupEnd = Math.min(groupStart + BEATS_PER_ROW_GROUP, state.beatsPerBar);
+      const groupEl = document.createElement('div');
+      groupEl.className = 'seq-row-group';
+      state.rows.forEach((row, li) => {
+        groupEl.appendChild(renderSeqRow(row, li, groupStart, groupEnd));
       });
-      dot.addEventListener('mousedown', onDown);
-      dot.addEventListener('mouseup', onUp);
-      dot.addEventListener('mouseleave', onUp);
+      beatsSeq.appendChild(groupEl);
     }
     updateBeatCounter();
+  }
+
+  function renderSeqRow(row, layerIndex, groupStart, groupEnd) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'seq-row';
+    rowEl.dataset.layer = layerIndex;
+
+    const pair = SOUND_PAIRS[row.sound];
+
+    // 音色ボタン（ペア単位・A/Bは選ばせない。分割の選択もこのボタンのポップアップ内で行う）
+    const soundBtn = document.createElement('button');
+    soundBtn.type = 'button';
+    soundBtn.className = 'layer-sound-btn';
+    soundBtn.title = `${layerIndex + 1}段目：${pair.label}（タップで音色・分割を変更）`;
+    soundBtn.innerHTML = `<span class="sound-dot-pair"><i style="background:${pair.A.color}"></i><i style="background:${pair.B.color}"></i></span>`;
+    soundBtn.addEventListener('click', () => openSoundPicker(layerIndex));
+    rowEl.appendChild(soundBtn);
+
+    const track = document.createElement('div');
+    track.className = 'seq-track';
+    const stepsPerBeat = DIVISIONS[row.division].steps;
+    const unitPerStep = STEP_GRID_UNIT / stepsPerBeat;
+
+    for (let bi = groupStart; bi < groupEnd; bi++) {
+      const cell = document.createElement('div');
+      cell.className = 'seq-beat-cell' + (state.currentBeat === bi ? ' active' : '');
+      cell.dataset.beat = bi;
+
+      const stepsEl = document.createElement('div');
+      stepsEl.className = 'layer-steps';
+      stepsEl.style.gridTemplateColumns = `repeat(${stepsPerBeat}, ${unitPerStep}fr)`;
+
+      for (let s = 0; s < stepsPerBeat; s++) {
+        const globalIndex = bi * stepsPerBeat + s;
+        const cellState = row.pattern[globalIndex];
+        const step = document.createElement('button');
+        step.type = 'button';
+        step.className = 'layer-step' + (cellState !== 'off' ? ' on' : '');
+        if (cellState !== 'off') {
+          step.style.setProperty('--snd-color', pair[cellState].color);
+        }
+        step.dataset.step = globalIndex;
+        step.addEventListener('click', (e) => {
+          e.stopPropagation();
+          row.pattern[globalIndex] = nextCellState(row.pattern[globalIndex]);
+          hapticTick();
+          renderBeats();
+        });
+        stepsEl.appendChild(step);
+      }
+      cell.appendChild(stepsEl);
+      track.appendChild(cell);
+    }
+
+    rowEl.appendChild(track);
+    return rowEl;
   }
 
   function updateBeatCounter() {
@@ -156,6 +221,67 @@
     beatCounter.innerHTML = `${shown}<span class="stage-meta-total">/ ${state.beatsPerBar}</span>`;
   }
 
+  // ---------- 音色ミニピッカー（段の音色ボタンをタップして開く。音色(ペア単位)＋分割を
+  // まとめて設定する。決定ボタンを押すまでポップアップは閉じない。） ----------
+  SOUND_PAIR_ORDER.forEach(key => {
+    const pair = SOUND_PAIRS[key];
+    const cell = document.createElement('div');
+    cell.className = 'sound-choice-cell';
+    cell.dataset.sound = key;
+    cell.innerHTML = `<span class="sc-dot-pair"><i style="background:${pair.A.color}"></i><i style="background:${pair.B.color}"></i></span><span class="sc-label">${pair.label}</span>`;
+    cell.addEventListener('click', () => {
+      if (activeSoundLayerIndex === null) return;
+      hapticTap();
+      state.rows[activeSoundLayerIndex].sound = key;
+      soundChoiceGrid.querySelectorAll('.sound-choice-cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      renderBeats();
+    });
+    soundChoiceGrid.appendChild(cell);
+  });
+
+  Object.keys(DIVISIONS).forEach(divKey => {
+    const cell = document.createElement('div');
+    cell.className = 'div-choice-cell';
+    cell.dataset.division = divKey;
+    cell.textContent = DIVISIONS[divKey].label;
+    cell.addEventListener('click', () => {
+      if (activeSoundLayerIndex === null) return;
+      hapticTap();
+      const row = state.rows[activeSoundLayerIndex];
+      row.division = divKey;
+      row.pattern = new Array(DIVISIONS[divKey].steps * state.beatsPerBar).fill('off');
+      divChoiceRow.querySelectorAll('.div-choice-cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      renderBeats();
+    });
+    divChoiceRow.appendChild(cell);
+  });
+
+  function openSoundPicker(layerIndex) {
+    activeSoundLayerIndex = layerIndex;
+    const row = state.rows[layerIndex];
+    soundPickTitle.textContent = `${layerIndex + 1}段目`;
+    soundChoiceGrid.querySelectorAll('.sound-choice-cell').forEach(c => {
+      c.classList.toggle('selected', c.dataset.sound === row.sound);
+    });
+    divChoiceRow.querySelectorAll('.div-choice-cell').forEach(c => {
+      c.classList.toggle('selected', c.dataset.division === row.division);
+    });
+    openPopup(soundPickPopup, soundPickBackdrop);
+  }
+
+  soundPickCloseBtn.addEventListener('click', () => {
+    hapticTap();
+    closePopup(soundPickPopup, soundPickBackdrop);
+    activeSoundLayerIndex = null;
+  });
+  soundPickBackdrop.addEventListener('click', () => {
+    closePopup(soundPickPopup, soundPickBackdrop);
+    activeSoundLayerIndex = null;
+  });
+
+  // ---------- Time signature popup ----------
   function presetLabelFor(n) {
     const map = { 2: '2/4', 3: '3/4', 4: '4/4', 6: '6/8', 8: '8/8' };
     return map[n] || `${n}拍`;
@@ -163,22 +289,16 @@
 
   function setBeatsPerBar(n) {
     state.beatsPerBar = n;
-    const newAccents = [];
-    const newSubdivs = [];
-    for (let i = 0; i < n; i++) {
-      newAccents.push(state.accents[i] !== undefined ? state.accents[i] : (i === 0));
-      newSubdivs.push(state.subdivKind);
-    }
-    if (!newAccents.some(Boolean)) newAccents[0] = true;
-    state.accents = newAccents;
-    state.subdivisions = newSubdivs;
+    state.rows.forEach(row => {
+      const stepsPerBeat = DIVISIONS[row.division].steps;
+      row.pattern = new Array(stepsPerBeat * n).fill('off');
+    });
     state.currentBeat = -1;
     renderBeats();
     sigToggleValue.textContent = presetLabelFor(n);
   }
 
-  // ---------- Time signature popup ----------
-  const SIG_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
+  const SIG_OPTIONS = [2, 3, 4, 5, 6, 7, 8];
   SIG_OPTIONS.forEach(n => {
     const cell = document.createElement('div');
     cell.className = 'choice-cell' + (n === state.beatsPerBar ? ' selected' : '');
@@ -193,78 +313,44 @@
     sigGrid.appendChild(cell);
   });
 
-  function openPopup(popup, backdrop) {
-    hapticTap();
-    popup.classList.add('open');
-    backdrop.classList.add('open');
-  }
-  function closePopup(popup, backdrop) {
-    popup.classList.remove('open');
-    backdrop.classList.remove('open');
-  }
-
   sigToggleBtn.addEventListener('click', () => openPopup(sigPopup, sigBackdrop));
   sigCloseBtn.addEventListener('click', () => { hapticTap(); closePopup(sigPopup, sigBackdrop); });
   sigBackdrop.addEventListener('click', () => closePopup(sigPopup, sigBackdrop));
 
-  // ---------- Subdivision popup ----------
-  subdivToggleBtn.addEventListener('click', () => openPopup(subdivPopup, subdivBackdrop));
-  subdivCloseBtn.addEventListener('click', () => { hapticTap(); closePopup(subdivPopup, subdivBackdrop); });
-  subdivBackdrop.addEventListener('click', () => closePopup(subdivPopup, subdivBackdrop));
-
-  const SUBDIV_LABELS = {
-    quarter: '4分',
-    eighth: '8分',
-    sixteenth: '16分',
-    'eighth-triplet': '8分3連',
-    'eighth-triplet-hollow': '8分3連中抜き',
-  };
-  subdivChoices.forEach(choice => {
-    choice.addEventListener('click', () => {
-      hapticTap();
-      subdivChoices.forEach(c => c.classList.remove('selected'));
-      choice.classList.add('selected');
-      const kind = choice.dataset.subdiv;
-      state.subdivKind = kind;
-      state.subdivisions = state.subdivisions.map(() => kind);
-      subdivToggleValue.textContent = SUBDIV_LABELS[kind];
-      renderBeats();
-    });
-  });
-
-  // ---------- BPM controls ----------
-  function updateFillVar() {
-    const min = parseInt(bpmSlider.min, 10);
-    const max = parseInt(bpmSlider.max, 10);
-    const pct = ((state.bpm - min) / (max - min)) * 100;
-    bpmSlider.style.setProperty('--fill', pct + '%');
-  }
-
-  function setBpm(v) {
+  // ---------- BPM controls (プリセット方式) ----------
+  function setBpm(v, force) {
     v = Math.max(30, Math.min(260, Math.round(v)));
-    if (v === state.bpm) return;
+    if (v === state.bpm && !force) return;
     state.bpm = v;
     bpmVal.textContent = v;
-    bpmSlider.value = v;
     tempoNameEl.textContent = tempoName(v);
-    updateFillVar();
+    updatePresetSelection();
     if (state.playing) rebaseSchedule();
   }
 
-  // BPM変更時、「今まさに鳴ろうとしている次の拍」の時刻はそのまま据え置き、
-  // それより先の間隔だけを新しいBPMで組み直す。これをしないと、スライダーを
-  // 素早く動かした時に古いBPMで埋まっていたキューと新しいBPMの間隔が食い違い、
-  // 音が詰まって連打されたように鳴り続けてしまう。
+  function updatePresetSelection() {
+    bpmPresetGrid.querySelectorAll('.bpm-preset-btn').forEach(btn => {
+      btn.classList.toggle('selected', parseInt(btn.dataset.bpm, 10) === state.bpm);
+    });
+  }
+
+  BPM_PRESETS.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'bpm-preset-btn';
+    btn.type = 'button';
+    btn.dataset.bpm = v;
+    btn.textContent = v;
+    btn.addEventListener('click', () => { hapticTap(); setBpm(v); });
+    bpmPresetGrid.appendChild(btn);
+  });
+
   function rebaseSchedule() {
     if (scheduledQueue.length > 0) {
       nextNoteTime = scheduledQueue[scheduledQueue.length - 1].time + secondsPerBeat();
     }
-    // まだ鳴っていない予約分は全て破棄し、次の拍から新テンポで再構築する
     const ctx = ensureCtx();
     if (nextNoteTime < ctx.currentTime) nextNoteTime = ctx.currentTime + 0.05;
   }
-
-  bpmSlider.addEventListener('input', () => setBpm(parseInt(bpmSlider.value, 10)));
 
   function stepBpm(dir) { setBpm(state.bpm + dir); hapticTick(); }
   bpmMinus.addEventListener('click', () => stepBpm(-1));
@@ -272,8 +358,6 @@
   bpmMinus2.addEventListener('click', () => stepBpm(-1));
   bpmPlus2.addEventListener('click', () => stepBpm(1));
 
-  // 各ボタンごとに独立したタイマーを持たせる（グローバル共有にすると、
-  // 別のボタンに触れた拍子に前のタイマーの参照が失われて止まらなくなるため）。
   const holdStoppers = [];
   function attachHold(btn, dir) {
     let holdTimeout = null;
@@ -303,8 +387,6 @@
   attachHold(bpmMinus2, -1);
   attachHold(bpmPlus2, 1);
 
-  // どこであれ指を離した瞬間、念のため全ボタンのホールドタイマーを止める保険。
-  // （タッチが要素の外へ流れて touchend/mouseup が正しく発火しないケースへの対策）
   window.addEventListener('touchend', () => holdStoppers.forEach(stop => stop()), { passive: true });
   window.addEventListener('mouseup', () => holdStoppers.forEach(stop => stop()));
 
@@ -336,22 +418,105 @@
     return audioCtx;
   }
 
-  function playClick(time, accented) {
+  function playSound(pairKey, variant, time) {
     const ctx = ensureCtx();
+    const def = soundVariant(pairKey, variant);
+
+    if (def.kind === 'bass') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const pitch = def.pitch || 1.0;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150 * pitch, time);
+      osc.frequency.exponentialRampToValueAtTime(45 * pitch, time + 0.12);
+      gain.gain.setValueAtTime(1, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+      osc.start(time);
+      osc.stop(time + 0.24);
+      return;
+    }
+
+    if (def.kind === 'snare') {
+      const pitch = def.pitch || 1.0;
+      const bufferSize = ctx.sampleRate * 0.2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 1000 * pitch;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.9, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(time);
+      noise.stop(time + 0.2);
+
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180 * pitch, time);
+      oscGain.gain.setValueAtTime(0.5, time);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.13);
+      return;
+    }
+
+    if (def.kind === 'hihat') {
+      const dur = def.dur || 0.06;
+      const bufferSize = ctx.sampleRate * (dur + 0.02);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.5, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(time);
+      noise.stop(time + dur + 0.01);
+      return;
+    }
+
+    if (def.kind === 'clave') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(def.freq, time);
+      gain.gain.setValueAtTime(0.6, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + 0.06);
+      return;
+    }
+
+    // click / beep
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    osc.type = def.kind === 'beep' ? 'sine' : 'square';
+    osc.frequency.setValueAtTime(def.freq, time);
+    const dur = def.kind === 'beep' ? 0.09 : 0.045;
+    gain.gain.setValueAtTime(0.8, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
     osc.connect(gain);
     gain.connect(ctx.destination);
-
-    let freq, dur, type;
-    if (state.soundKind === 0) { freq = accented ? 1500 : 1000; dur = 0.045; type = 'square'; }
-    else if (state.soundKind === 1) { freq = accented ? 1760 : 880; dur = 0.09; type = 'sine'; }
-    else { freq = accented ? 900 : 600; dur = 0.06; type = 'triangle'; }
-
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, time);
-    gain.gain.setValueAtTime(accented ? 0.9 : 0.55, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
     osc.start(time);
     osc.stop(time + dur + 0.01);
   }
@@ -363,6 +528,7 @@
   const SCHEDULE_AHEAD = 0.12;
   const LOOKAHEAD_MS = 25;
   const scheduledQueue = [];
+  const stepFlashQueue = [];
   let visualRAF = null;
 
   function secondsPerBeat() { return 60.0 / state.bpm; }
@@ -370,20 +536,21 @@
   function scheduler() {
     const ctx = ensureCtx();
     while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) {
-      const beatAccented = !!state.accents[beatIndex];
-      const slots = slotsFor(state.subdivisions[beatIndex] || 'quarter');
       const beatDur = secondsPerBeat();
-      const slotDur = beatDur / slots.length;
 
-      slots.forEach((shouldPlay, slotIdx) => {
-        const slotTime = nextNoteTime + slotIdx * slotDur;
-        if (shouldPlay) {
-          const accented = beatAccented && slotIdx === 0;
-          playClick(slotTime, accented);
+      state.rows.forEach((row, li) => {
+        const stepsPerBeat = DIVISIONS[row.division].steps;
+        const stepDur = beatDur / stepsPerBeat;
+        for (let s = 0; s < stepsPerBeat; s++) {
+          const globalIndex = beatIndex * stepsPerBeat + s;
+          const cellState = row.pattern[globalIndex];
+          const t = nextNoteTime + s * stepDur;
+          if (cellState !== 'off') playSound(row.sound, cellState, t);
+          stepFlashQueue.push({ time: t, beat: beatIndex, layer: li, step: globalIndex });
         }
-        if (slotIdx === 0) scheduledQueue.push({ time: slotTime, beat: beatIndex });
       });
 
+      scheduledQueue.push({ time: nextNoteTime, beat: beatIndex });
       beatIndex = (beatIndex + 1) % state.beatsPerBar;
       nextNoteTime += beatDur;
     }
@@ -395,20 +562,31 @@
     while (scheduledQueue.length && scheduledQueue[0].time <= now) {
       const item = scheduledQueue.shift();
       state.currentBeat = item.beat;
-      flashBeat(item.beat);
+      updateBeatCounter();
+      flashBeatBlock(item.beat);
+    }
+    while (stepFlashQueue.length && stepFlashQueue[0].time <= now) {
+      const item = stepFlashQueue.shift();
+      flashStep(item.beat, item.layer, item.step);
     }
     if (state.playing) visualRAF = requestAnimationFrame(visualLoop);
   }
 
-  function flashBeat(i) {
-    updateBeatCounter();
-    const dots = beatsRow.querySelectorAll('.beat-dot');
-    dots.forEach(d => d.classList.remove('active'));
-    const target = dots[i];
-    if (target) {
-      target.classList.add('active');
-      setTimeout(() => target.classList.remove('active'), 160);
-    }
+  function flashBeatBlock(i) {
+    beatsSeq.querySelectorAll('.seq-beat-cell').forEach(c => c.classList.remove('active'));
+    beatsSeq.querySelectorAll(`.seq-beat-cell[data-beat="${i}"]`).forEach(c => c.classList.add('active'));
+  }
+
+  function flashStep(beatIdx, layerIdx, globalStepIdx) {
+    const rows = beatsSeq.querySelectorAll(`.seq-row[data-layer="${layerIdx}"]`);
+    rows.forEach(row => {
+      const cell = row.querySelector(`.seq-beat-cell[data-beat="${beatIdx}"]`);
+      if (!cell) return;
+      const stepEl = cell.querySelector(`.layer-step[data-step="${globalStepIdx}"]`);
+      if (!stepEl) return;
+      stepEl.classList.add('playing');
+      setTimeout(() => stepEl.classList.remove('playing'), 120);
+    });
   }
 
   function start() {
@@ -417,6 +595,7 @@
     beatIndex = 0;
     state.currentBeat = -1;
     scheduledQueue.length = 0;
+    stepFlashQueue.length = 0;
     nextNoteTime = ctx.currentTime + 0.06;
     schedulerTimer = setInterval(scheduler, LOOKAHEAD_MS);
     visualRAF = requestAnimationFrame(visualLoop);
@@ -429,7 +608,8 @@
     clearInterval(schedulerTimer);
     cancelAnimationFrame(visualRAF);
     state.currentBeat = -1;
-    beatsRow.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
+    beatsSeq.querySelectorAll('.seq-beat-cell').forEach(c => c.classList.remove('active'));
+    beatsSeq.querySelectorAll('.layer-step.playing').forEach(s => s.classList.remove('playing'));
     updateBeatCounter();
     playToggle.classList.remove('playing');
     playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
@@ -441,16 +621,9 @@
     if (state.playing) stop(); else start();
   });
 
-  // ---------- Sound toggle ----------
-  soundToggleBtn.addEventListener('click', () => {
-    hapticTap();
-    state.soundKind = (state.soundKind + 1) % 3;
-    soundToggleBtn.title = `音色を切り替え（${SOUND_LABELS[state.soundKind]}）`;
-    soundToggleBtn.classList.toggle('active', state.soundKind !== 0);
-  });
-
   // ---------- Init ----------
-  setBpm(120);
+  setBpm(120, true);
+  updatePresetSelection();
   renderBeats();
   syncSpacer();
 })();

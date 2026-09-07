@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 0.1.4</title>
+<title>QN TEMPO 0.8.0</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="appHeader">
-  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.1.4</span></h1>
+  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.8.0</span></h1>
 </div>
 
 <div class="stage-wrap">
@@ -18,8 +18,8 @@
       <span class="stage-meta-label">Beat</span>
       <span class="stage-meta-value" id="beatCounter">1<span class="stage-meta-total">/ 4</span></span>
     </div>
-    <div class="beats" id="beatsRow"></div>
-    <div class="stage-hint">タップでアクセント　<span class="stage-hint-dim">・</span>　強拍がリズムの土台になるよ</div>
+
+    <div class="beats-seq" id="beatsSeq"></div>
 
     <div class="stage-settings-row">
       <button id="sigToggleBtn" class="av-toggle-btn" title="拍子">
@@ -27,14 +27,6 @@
         <span class="av-toggle-btn-text">
           <span class="av-toggle-btn-value" id="sigToggleValue">4/4</span>
           <span class="av-toggle-btn-label">拍子</span>
-        </span>
-      </button>
-
-      <button id="subdivToggleBtn" class="av-toggle-btn" title="分割">
-        <svg viewBox="0 0 24 24"><path d="M4 4h4v16H4V4zm6 4h4v12h-4V8zm6-6h4v18h-4V2z"/></svg>
-        <span class="av-toggle-btn-text">
-          <span class="av-toggle-btn-value" id="subdivToggleValue">4分</span>
-          <span class="av-toggle-btn-label">分割</span>
         </span>
       </button>
     </div>
@@ -54,10 +46,7 @@
 <div class="bpm-panel-box">
   <div class="bpm-stepper-row">
     <button class="step-btn" id="bpmMinus" title="BPMを下げる">−</button>
-    <div class="bpm-slider-wrap">
-      <input type="range" id="bpmSlider" min="30" max="260" value="120">
-      <div class="bpm-marks"><span>30</span><span>90</span><span>150</span><span>210</span><span>260</span></div>
-    </div>
+    <div class="bpm-preset-grid" id="bpmPresetGrid"></div>
     <button class="step-btn" id="bpmPlus" title="BPMを上げる">＋</button>
   </div>
   <div class="tap-readout-row">
@@ -73,33 +62,14 @@
   <button class="popup-close-btn" id="sigCloseBtn">決定</button>
 </div>
 
-<!-- 分割ピッカー -->
-<div class="av-popup-backdrop" id="subdivBackdrop"></div>
-<div class="av-popup" id="subdivPopup">
-  <p class="popup-title">拍の分割（全拍に適用）</p>
-  <div class="subdiv-choice-row" id="subdivChoiceRow">
-    <div class="subdiv-choice selected" data-subdiv="quarter">
-      <span class="sd-label">4分</span>
-      <span class="sd-dots"><i></i></span>
-    </div>
-    <div class="subdiv-choice" data-subdiv="eighth">
-      <span class="sd-label">8分</span>
-      <span class="sd-dots"><i></i><i></i></span>
-    </div>
-    <div class="subdiv-choice" data-subdiv="sixteenth">
-      <span class="sd-label">16分</span>
-      <span class="sd-dots"><i></i><i></i><i></i><i></i></span>
-    </div>
-    <div class="subdiv-choice" data-subdiv="eighth-triplet">
-      <span class="sd-label">8分3連</span>
-      <span class="sd-dots"><i></i><i></i><i></i></span>
-    </div>
-    <div class="subdiv-choice" data-subdiv="eighth-triplet-hollow">
-      <span class="sd-label">8分3連中抜き</span>
-      <span class="sd-dots"><i></i><i class="ghost"></i><i></i></span>
-    </div>
-  </div>
-  <button class="popup-close-btn" id="subdivCloseBtn">決定</button>
+<!-- 音色ピッカー（段の音色ボタンをタップすると開く。全拍共通の音色＋分割をまとめて設定） -->
+<div class="av-popup-backdrop" id="soundPickBackdrop"></div>
+<div class="av-popup" id="soundPickPopup">
+  <p class="popup-title"><span id="soundPickTitle">1段目</span>の設定（全拍共通）</p>
+  <div class="sound-choice-grid" id="soundChoiceGrid"></div>
+  <p class="popup-subtitle">分割</p>
+  <div class="div-choice-row" id="divChoiceRow"></div>
+  <button class="popup-close-btn" id="soundPickCloseBtn">決定</button>
 </div>
 
 <!-- 下部固定トランスポート（QNAUDIOのtop-controlsに準拠） -->
@@ -124,10 +94,6 @@
     <button id="tapBtn" class="loopbtn" title="TAPテンポ">
       <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
       <span class="top-controls-btn-label">Tap</span>
-    </button>
-    <button id="soundToggleBtn" class="loopbtn" title="音色を切り替え（クリック）">
-      <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-      <span class="top-controls-btn-label">Sound</span>
     </button>
   </div>
 </div>
