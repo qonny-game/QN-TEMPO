@@ -217,17 +217,19 @@ body {
 /* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
    [拍ごとのパターン本体]。1行あたり最大4拍分を表示し、5拍目以降は次の行に
    折り返す（1-4拍で1段、5-8拍で1段）。外枠パネルは持たず、画面幅いっぱいに
-   広げる。マス同士・拍の境目も隙間ゼロでフラットに連結する。 */
+   広げる。間隔はマス間1px・拍間3px・段間3px。 */
 .beats-seq {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 2px 0 16px;
+  touch-action: none;
 }
 
 .seq-row-group {
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 
 .seq-row {
@@ -262,14 +264,14 @@ body {
 }
 
 /* 本体：1行分（最大4拍）のセルが横一列に並び、余白なく均等に画面幅いっぱいへ
-   広がる。マス・拍の境目とも隙間ゼロでフラットに連結する（角丸なし）。 */
+   広がる。拍の境目は3pxの隙間で区切る（マス間の1pxより少し広く、拍の区切りが
+   分かりやすいようにする）。 */
 .seq-track {
   flex: 1;
   min-width: 0;
   display: flex;
-  gap: 0;
-  background: #17171d;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 3px;
+  background: transparent;
 }
 
 .seq-beat-cell {
@@ -279,20 +281,20 @@ body {
   display: flex;
   align-items: center;
   padding: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
-.seq-beat-cell:last-child { border-right: none; }
 
 /* ステップ本体：段のマス数（3 or 4）に関わらず、1拍分の幅は常に同じになるよう
    grid-template-columnsをJS側で動的に指定する（LCM(3,4)=12を基準単位とし、
    3マスの行は1マス=4単位、4マスの行は1マス=3単位で描く）。これにより行ごとに
-   マス数が違っても、拍の境目は必ず揃う。マス同士は隙間ゼロ、角丸なしで連結する。 */
+   マス数が違っても、拍の境目は必ず揃う。マス間は1pxの隙間で区切る（背景色で
+   ボタンとボタンの間に細い線が見える）。 */
 .layer-steps {
   display: grid;
-  gap: 0;
+  gap: 1px;
   flex: 1;
   min-width: 0;
   width: 100%;
+  background: rgba(255, 255, 255, 0.08);
 }
 .layer-step {
   width: 100%;
@@ -301,12 +303,10 @@ body {
   border-radius: 0;
   background: #26262f;
   border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  transition: background 0.1s var(--ease-snap), transform 0.08s var(--ease-snap);
+  touch-action: none;
+  transition: background 0.1s var(--ease-snap);
 }
-.layer-step:last-child { border-right: none; }
-.layer-step:active { transform: scale(0.94); }
 .layer-step.on {
   background: var(--snd-color, var(--accent-primary));
 }
@@ -684,6 +684,25 @@ body {
   font-size: 16px;
 }
 .preset-row-delete:active { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+/* 組み込みプリセット（8 Beat）：常に先頭・削除不可なことが分かるよう、
+   アクセントカラーの縁取りとBUILT-INバッジで通常のプリセットと区別する。 */
+.preset-row-builtin {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.06);
+  margin-bottom: 4px;
+}
+.preset-row-badge {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--accent-glow);
+  color: var(--accent-primary);
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
 
 .popup-close-btn {
   width: 100%;

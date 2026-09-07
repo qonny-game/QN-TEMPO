@@ -73,27 +73,35 @@
     playing: false,
   };
 
-  // デフォルトで定番の8ビートパターンをセットしておく（何もしなくても
-  // 「それらしく」鳴る状態から始められるようにするため）。
-  // 16分4マス構成のうち0,2番目（＝8分刻み）をハイハットで鳴らし、
-  // スネアは2・4拍目の頭、バスは1・3拍目の頭に置く定番形。
-  function applyDefaultEightBeat() {
-    const hihat = state.rows[0];
-    const snare = state.rows[1];
-    const bass = state.rows[2];
-    for (let bi = 0; bi < state.beatsPerBar; bi++) {
-      const stepsPerBeat = DIVISIONS[hihat.division].steps; // 4
-      hihat.pattern[bi * stepsPerBeat + 0] = 'A';
-      hihat.pattern[bi * stepsPerBeat + 2] = 'A';
+  // "8 Beat" は常にプリセット一覧の先頭に固定表示される組み込みプリセット
+  // （削除不可、ユーザー保存のプリセットとは別扱い）。4/4・16分割固定で、
+  // 押した瞬間いつでも定番の8ビートに戻せるようにする。
+  function buildEightBeatPreset() {
+    const beatsPerBar = 4;
+    const hihat = makeLayerRow('hihat', 'sixteenth', beatsPerBar);
+    const snare = makeLayerRow('snare', 'sixteenth', beatsPerBar);
+    const bass = makeLayerRow('bass', 'sixteenth', beatsPerBar);
+    for (let bi = 0; bi < beatsPerBar; bi++) {
+      hihat.pattern[bi * 4 + 0] = 'A';
+      hihat.pattern[bi * 4 + 2] = 'A';
     }
-    // スネアは2拍目・4拍目の頭（0-indexで1,3拍目）
-    const snareSteps = DIVISIONS[snare.division].steps;
-    if (state.beatsPerBar >= 2) snare.pattern[1 * snareSteps] = 'A';
-    if (state.beatsPerBar >= 4) snare.pattern[3 * snareSteps] = 'A';
-    // バスは1拍目・3拍目の頭（0-indexで0,2拍目）
-    const bassSteps = DIVISIONS[bass.division].steps;
-    bass.pattern[0 * bassSteps] = 'A';
-    if (state.beatsPerBar >= 3) bass.pattern[2 * bassSteps] = 'A';
+    snare.pattern[1 * 4] = 'A';
+    snare.pattern[3 * 4] = 'A';
+    bass.pattern[0 * 4] = 'A';
+    bass.pattern[2 * 4] = 'A';
+    return {
+      name: '8 Beat',
+      builtin: true,
+      bpm: 120,
+      beatsPerBar,
+      rows: [hihat, snare, bass],
+    };
+  }
+
+  // 初回起動時（保存済みの作業状態がまだない場合）は、組み込みの8ビートを
+  // そのまま作業中の状態としてもセットしておく。
+  function applyDefaultEightBeat() {
+    applySerializedState(buildEightBeatPreset());
   }
 
   // ---------- 永続化（作業中の状態を自動保存し、再読み込み時に復元） ----------
@@ -255,6 +263,10 @@
   function renderPresetList() {
     const list = loadPresets();
     presetList.innerHTML = '';
+
+    // 組み込みの "8 Beat" は常に一番上、削除不可
+    presetList.appendChild(renderPresetRow(buildEightBeatPreset(), null, true));
+
     if (list.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'preset-empty';
@@ -263,28 +275,39 @@
       return;
     }
     list.forEach((preset, idx) => {
-      const row = document.createElement('div');
-      row.className = 'preset-row';
+      presetList.appendChild(renderPresetRow(preset, idx, false));
+    });
+  }
 
-      const name = document.createElement('span');
-      name.className = 'preset-row-name';
-      name.textContent = preset.name;
-      name.title = 'Tap to load';
-      name.addEventListener('click', () => {
-        hapticSuccess();
-        applySerializedState(preset);
-        setBpm(state.bpm, true);
-        sigToggleValue.textContent = presetLabelFor(state.beatsPerBar);
-        renderBeats();
-        closePopup(presetPopup, presetBackdrop);
-      });
-      row.appendChild(name);
+  function renderPresetRow(preset, idx, builtin) {
+    const row = document.createElement('div');
+    row.className = 'preset-row' + (builtin ? ' preset-row-builtin' : '');
 
-      const meta = document.createElement('span');
-      meta.className = 'preset-row-meta';
-      meta.textContent = `${preset.bpm} BPM`;
-      row.appendChild(meta);
+    const name = document.createElement('span');
+    name.className = 'preset-row-name';
+    name.textContent = preset.name;
+    name.title = 'Tap to load';
+    name.addEventListener('click', () => {
+      hapticSuccess();
+      applySerializedState(preset);
+      setBpm(state.bpm, true);
+      sigToggleValue.textContent = presetLabelFor(state.beatsPerBar);
+      renderBeats();
+      closePopup(presetPopup, presetBackdrop);
+    });
+    row.appendChild(name);
 
+    const meta = document.createElement('span');
+    meta.className = 'preset-row-meta';
+    meta.textContent = `${preset.bpm} BPM`;
+    row.appendChild(meta);
+
+    if (builtin) {
+      const badge = document.createElement('span');
+      badge.className = 'preset-row-badge';
+      badge.textContent = 'BUILT-IN';
+      row.appendChild(badge);
+    } else {
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'preset-row-delete';
@@ -299,12 +322,83 @@
         renderPresetList();
       });
       row.appendChild(delBtn);
+    }
 
-      presetList.appendChild(row);
-    });
+    return row;
   }
 
   const BEATS_PER_ROW_GROUP = 4;
+
+  // ---------- Step painting (tap = cycle off→A→B→off, drag = paint the same state) ----------
+  // Whatever state the first cell in a drag has, that state gets applied to every
+  // cell the finger passes over. A plain tap (no movement) still cycles the state.
+  // 再描画(renderBeats)はDOMを作り直してしまい、ドラッグ中のpointer captureが
+  // 外れてしまうため、ドラッグ中は state.rows.pattern と該当要素の見た目だけを
+  // 直接更新し、ドラッグ終了時に一度だけ renderBeats() する。
+  let paintState = null;      // the state being "painted" during this drag (off/A/B)
+  let paintTouched = null;    // Set of "layer:step" keys already painted this drag
+  let paintRow = null;        // the row object currently being painted
+
+  function stepKeyFromEl(el) {
+    if (!el || !el.classList || !el.classList.contains('layer-step')) return null;
+    return `${el.dataset.layer}:${el.dataset.step}`;
+  }
+
+  function setStepVisual(el, cellState, row) {
+    el.classList.toggle('on', cellState !== 'off');
+    if (cellState !== 'off') {
+      const pair = SOUND_PAIRS[row.sound];
+      el.style.setProperty('--snd-color', pair[cellState].color);
+    } else {
+      el.style.removeProperty('--snd-color');
+    }
+  }
+
+  beatsSeq.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.layer-step');
+    if (!el) return;
+    e.preventDefault();
+    const layerIndex = parseInt(el.dataset.layer, 10);
+    const stepIndex = parseInt(el.dataset.step, 10);
+    const row = state.rows[layerIndex];
+    if (!row) return;
+
+    // タップ時は今の状態を次の状態へ進める（off→A→B→off）。
+    // これがそのままドラッグ中に塗る対象の状態になる。
+    paintState = nextCellState(row.pattern[stepIndex]);
+    paintRow = row;
+    paintTouched = new Set([stepKeyFromEl(el)]);
+    row.pattern[stepIndex] = paintState;
+    setStepVisual(el, paintState, row);
+    hapticTick();
+    beatsSeq.setPointerCapture(e.pointerId);
+  });
+
+  beatsSeq.addEventListener('pointermove', (e) => {
+    if (paintState === null) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const key = stepKeyFromEl(el);
+    if (!key || paintTouched.has(key)) return;
+    const layerIndex = parseInt(el.dataset.layer, 10);
+    // ドラッグは同じ段（行）の中だけで有効にする（違う段のマスは対象外）
+    if (state.rows[layerIndex] !== paintRow) return;
+    const stepIndex = parseInt(el.dataset.step, 10);
+    paintTouched.add(key);
+    paintRow.pattern[stepIndex] = paintState;
+    setStepVisual(el, paintState, paintRow);
+    hapticTick();
+  });
+
+  function endPaint() {
+    if (paintState === null) return;
+    paintState = null;
+    paintTouched = null;
+    paintRow = null;
+    renderBeats();
+  }
+  beatsSeq.addEventListener('pointerup', endPaint);
+  beatsSeq.addEventListener('pointercancel', endPaint);
+  beatsSeq.addEventListener('pointerleave', endPaint);
 
   // ---------- Render: beats-seq ----------
   // 1グループ=最大4拍として、5拍目以降は次のグループ（次の行の並び）に折り返す。
@@ -365,12 +459,7 @@
           step.style.setProperty('--snd-color', pair[cellState].color);
         }
         step.dataset.step = globalIndex;
-        step.addEventListener('click', (e) => {
-          e.stopPropagation();
-          row.pattern[globalIndex] = nextCellState(row.pattern[globalIndex]);
-          hapticTick();
-          renderBeats();
-        });
+        step.dataset.layer = layerIndex;
         stepsEl.appendChild(step);
       }
       cell.appendChild(stepsEl);
