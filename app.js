@@ -857,8 +857,12 @@
           const globalIndex = beatIndex * stepsPerBeat + s;
           const cellState = row.pattern[globalIndex];
           const t = nextNoteTime + s * stepDur;
-          if (cellState !== 'off') playSound(row.sound, cellState, t);
-          stepFlashQueue.push({ time: t, beat: beatIndex, layer: li, step: globalIndex });
+          // 実際に音が鳴るマスだけをフラッシュ対象にする。offのマスまで
+          // キューに積むと、鳴っていないマスまで一瞬光って見えてしまう。
+          if (cellState !== 'off') {
+            playSound(row.sound, cellState, t);
+            stepFlashQueue.push({ time: t, beat: beatIndex, layer: li, step: globalIndex });
+          }
         }
       });
 
