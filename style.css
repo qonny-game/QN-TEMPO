@@ -685,7 +685,7 @@ body {
 }
 .preset-row-delete:active { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
-/* 組み込みプリセット（8 Beat）：常に先頭・削除不可なことが分かるよう、
+/* 組み込みプリセット（8 Beat, Shuffle Beat）：常に先頭・削除不可なことが分かるよう、
    アクセントカラーの縁取りとBUILT-INバッジで通常のプリセットと区別する。 */
 .preset-row-builtin {
   border-color: rgba(59, 130, 246, 0.3);

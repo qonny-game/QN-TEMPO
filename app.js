@@ -98,6 +98,36 @@
     };
   }
 
+  // "Shuffle Beat" も同じく組み込みの固定プリセット。8分3連(ALL 3)で、
+  // ハイハット=1・3・4拍目の頭とウラ(0,2マス目)、スネア=2拍目の頭とウラのみ、
+  // バス=1・2拍目の頭のみ、という跳ねたシャッフルのノリ。
+  function buildShuffleBeatPreset() {
+    const beatsPerBar = 4;
+    const hihat = makeLayerRow('hihat', 'eighthTriplet', beatsPerBar);
+    const snare = makeLayerRow('snare', 'eighthTriplet', beatsPerBar);
+    const bass = makeLayerRow('bass', 'eighthTriplet', beatsPerBar);
+    [0, 2, 3].forEach(bi => {
+      hihat.pattern[bi * 3 + 0] = 'A';
+      hihat.pattern[bi * 3 + 2] = 'A';
+    });
+    snare.pattern[1 * 3 + 0] = 'A';
+    snare.pattern[1 * 3 + 2] = 'A';
+    bass.pattern[0 * 3] = 'A';
+    bass.pattern[1 * 3] = 'A';
+    return {
+      name: 'Shuffle Beat',
+      builtin: true,
+      bpm: 120,
+      beatsPerBar,
+      rows: [hihat, snare, bass],
+    };
+  }
+
+  // 一番上に固定表示する組み込みプリセットの一覧（この順で表示、いずれも削除不可）
+  function builtinPresets() {
+    return [buildEightBeatPreset(), buildShuffleBeatPreset()];
+  }
+
   // 初回起動時（保存済みの作業状態がまだない場合）は、組み込みの8ビートを
   // そのまま作業中の状態としてもセットしておく。
   function applyDefaultEightBeat() {
@@ -264,8 +294,10 @@
     const list = loadPresets();
     presetList.innerHTML = '';
 
-    // 組み込みの "8 Beat" は常に一番上、削除不可
-    presetList.appendChild(renderPresetRow(buildEightBeatPreset(), null, true));
+    // 組み込みプリセット（8 Beat, Shuffle Beat）は常に一番上、削除不可
+    builtinPresets().forEach(preset => {
+      presetList.appendChild(renderPresetRow(preset, null, true));
+    });
 
     if (list.length === 0) {
       const empty = document.createElement('p');
