@@ -72,11 +72,92 @@
     currentBeat: -1,
     playing: false,
   };
-  // 何も鳴らないと不安になるため、1段目（ハット）の各拍頭にAを入れておく
-  for (let bi = 0; bi < state.beatsPerBar; bi++) {
-    const stepsPerBeat = DIVISIONS[state.rows[0].division].steps;
-    state.rows[0].pattern[bi * stepsPerBeat] = 'A';
+
+  // デフォルトで定番の8ビートパターンをセットしておく（何もしなくても
+  // 「それらしく」鳴る状態から始められるようにするため）。
+  // 16分4マス構成のうち0,2番目（＝8分刻み）をハイハットで鳴らし、
+  // スネアは2・4拍目の頭、バスは1・3拍目の頭に置く定番形。
+  function applyDefaultEightBeat() {
+    const hihat = state.rows[0];
+    const snare = state.rows[1];
+    const bass = state.rows[2];
+    for (let bi = 0; bi < state.beatsPerBar; bi++) {
+      const stepsPerBeat = DIVISIONS[hihat.division].steps; // 4
+      hihat.pattern[bi * stepsPerBeat + 0] = 'A';
+      hihat.pattern[bi * stepsPerBeat + 2] = 'A';
+    }
+    // スネアは2拍目・4拍目の頭（0-indexで1,3拍目）
+    const snareSteps = DIVISIONS[snare.division].steps;
+    if (state.beatsPerBar >= 2) snare.pattern[1 * snareSteps] = 'A';
+    if (state.beatsPerBar >= 4) snare.pattern[3 * snareSteps] = 'A';
+    // バスは1拍目・3拍目の頭（0-indexで0,2拍目）
+    const bassSteps = DIVISIONS[bass.division].steps;
+    bass.pattern[0 * bassSteps] = 'A';
+    if (state.beatsPerBar >= 3) bass.pattern[2 * bassSteps] = 'A';
   }
+
+  // ---------- 永続化（作業中の状態を自動保存し、再読み込み時に復元） ----------
+  const STORAGE_KEY = 'qntempo.workingState.v1';
+  const PRESETS_KEY = 'qntempo.presets.v1';
+
+  function serializeState() {
+    return {
+      bpm: state.bpm,
+      beatsPerBar: state.beatsPerBar,
+      rows: state.rows.map(r => ({ sound: r.sound, division: r.division, pattern: r.pattern.slice() })),
+    };
+  }
+
+  function applySerializedState(saved) {
+    if (!saved || !Array.isArray(saved.rows) || saved.rows.length !== 3) return false;
+    state.bpm = saved.bpm || 120;
+    state.beatsPerBar = saved.beatsPerBar || 4;
+    state.rows = saved.rows.map(r => ({
+      sound: SOUND_PAIRS[r.sound] ? r.sound : 'click',
+      division: DIVISIONS[r.division] ? r.division : 'sixteenth',
+      pattern: Array.isArray(r.pattern) ? r.pattern.slice() : [],
+    }));
+    return true;
+  }
+
+  let saveTimer = null;
+  function saveWorkingState() {
+    // 連続操作（マス連打など）で毎回書き込まないよう、少し間引く
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState()));
+      } catch (e) { /* 保存できない環境でもアプリの動作自体は継続する */ }
+    }, 250);
+  }
+
+  function loadWorkingState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      return applySerializedState(JSON.parse(raw));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadPresets() {
+    try {
+      const raw = localStorage.getItem(PRESETS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function savePresets(list) {
+    try {
+      localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
+    } catch (e) { /* 保存できない環境でもアプリの動作自体は継続する */ }
+  }
+
+  const hadSavedState = loadWorkingState();
+  if (!hadSavedState) applyDefaultEightBeat();
 
   const BPM_PRESETS = [60, 80, 100, 120, 140, 160, 180, 200];
 
@@ -119,6 +200,14 @@
   const divChoiceRow = document.getElementById('divChoiceRow');
   const soundPickCloseBtn = document.getElementById('soundPickCloseBtn');
 
+  const presetBtn = document.getElementById('presetBtn');
+  const presetPopup = document.getElementById('presetPopup');
+  const presetBackdrop = document.getElementById('presetBackdrop');
+  const presetNameInput = document.getElementById('presetNameInput');
+  const presetSaveBtn = document.getElementById('presetSaveBtn');
+  const presetList = document.getElementById('presetList');
+  const presetCloseBtn = document.getElementById('presetCloseBtn');
+
   const topControls = document.getElementById('topControls');
   const topControlsSpacer = document.getElementById('topControlsSpacer');
 
@@ -141,6 +230,78 @@
     backdrop.classList.remove('open');
   }
 
+  // ---------- プリセット保存・呼び出し ----------
+  presetBtn.addEventListener('click', () => {
+    presetNameInput.value = '';
+    renderPresetList();
+    openPopup(presetPopup, presetBackdrop);
+  });
+  presetCloseBtn.addEventListener('click', () => { hapticTap(); closePopup(presetPopup, presetBackdrop); });
+  presetBackdrop.addEventListener('click', () => closePopup(presetPopup, presetBackdrop));
+
+  presetSaveBtn.addEventListener('click', () => {
+    const name = presetNameInput.value.trim();
+    if (!name) { hapticTap(); presetNameInput.focus(); return; }
+    hapticSuccess();
+    const list = loadPresets();
+    list.unshift({ name, savedAt: Date.now(), ...serializeState() });
+    savePresets(list);
+    presetNameInput.value = '';
+    renderPresetList();
+  });
+
+  function renderPresetList() {
+    const list = loadPresets();
+    presetList.innerHTML = '';
+    if (list.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'preset-empty';
+      empty.textContent = 'まだ保存されたプリセットはありません';
+      presetList.appendChild(empty);
+      return;
+    }
+    list.forEach((preset, idx) => {
+      const row = document.createElement('div');
+      row.className = 'preset-row';
+
+      const name = document.createElement('span');
+      name.className = 'preset-row-name';
+      name.textContent = preset.name;
+      name.title = 'タップして読み込み';
+      name.addEventListener('click', () => {
+        hapticSuccess();
+        applySerializedState(preset);
+        setBpm(state.bpm, true);
+        sigToggleValue.textContent = presetLabelFor(state.beatsPerBar);
+        renderBeats();
+        closePopup(presetPopup, presetBackdrop);
+      });
+      row.appendChild(name);
+
+      const meta = document.createElement('span');
+      meta.className = 'preset-row-meta';
+      meta.textContent = `${preset.bpm} BPM`;
+      row.appendChild(meta);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'preset-row-delete';
+      delBtn.textContent = '×';
+      delBtn.title = '削除';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hapticTick();
+        const current = loadPresets();
+        current.splice(idx, 1);
+        savePresets(current);
+        renderPresetList();
+      });
+      row.appendChild(delBtn);
+
+      presetList.appendChild(row);
+    });
+  }
+
   const BEATS_PER_ROW_GROUP = 4;
 
   // ---------- Render: beats-seq ----------
@@ -158,6 +319,7 @@
       beatsSeq.appendChild(groupEl);
     }
     updateBeatCounter();
+    saveWorkingState();
   }
 
   function renderSeqRow(row, layerIndex, groupStart, groupEnd) {
@@ -313,7 +475,12 @@
     sigGrid.appendChild(cell);
   });
 
-  sigToggleBtn.addEventListener('click', () => openPopup(sigPopup, sigBackdrop));
+  sigToggleBtn.addEventListener('click', () => {
+    sigGrid.querySelectorAll('.choice-cell').forEach(c => {
+      c.classList.toggle('selected', parseInt(c.dataset.beats, 10) === state.beatsPerBar);
+    });
+    openPopup(sigPopup, sigBackdrop);
+  });
   sigCloseBtn.addEventListener('click', () => { hapticTap(); closePopup(sigPopup, sigBackdrop); });
   sigBackdrop.addEventListener('click', () => closePopup(sigPopup, sigBackdrop));
 
@@ -326,6 +493,7 @@
     tempoNameEl.textContent = tempoName(v);
     updatePresetSelection();
     if (state.playing) rebaseSchedule();
+    saveWorkingState();
   }
 
   function updatePresetSelection() {
@@ -622,7 +790,9 @@
   });
 
   // ---------- Init ----------
-  setBpm(120, true);
+  // loadWorkingState()が復元したBPMをそのまま画面に反映する（強制上書きしない）
+  setBpm(state.bpm, true);
+  sigToggleValue.textContent = presetLabelFor(state.beatsPerBar);
   updatePresetSelection();
   renderBeats();
   syncSpacer();

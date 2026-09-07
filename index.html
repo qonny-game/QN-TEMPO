@@ -3,13 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 0.8.0</title>
+<title>QN TEMPO 0.9.1</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="appHeader">
-  <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.8.0</span></h1>
+  <div id="appHeaderText">
+    <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v0.9.1</span></h1>
+  </div>
+  <div id="headerControls">
+    <div class="header-btn-wrapper">
+      <button id="presetBtn" title="プリセットを保存・呼び出し">
+        <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        <span>PRESET</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="stage-wrap">
@@ -70,6 +80,21 @@
   <p class="popup-subtitle">分割</p>
   <div class="div-choice-row" id="divChoiceRow"></div>
   <button class="popup-close-btn" id="soundPickCloseBtn">決定</button>
+</div>
+
+<!-- プリセット保存・呼び出し -->
+<div class="av-popup-backdrop" id="presetBackdrop"></div>
+<div class="av-popup" id="presetPopup">
+  <p class="popup-title">プリセット</p>
+
+  <div class="preset-save-row">
+    <input type="text" id="presetNameInput" class="preset-name-input" placeholder="プリセット名" maxlength="20">
+    <button class="preset-save-btn" id="presetSaveBtn">保存</button>
+  </div>
+
+  <div class="preset-list" id="presetList"></div>
+
+  <button class="popup-close-btn" id="presetCloseBtn">閉じる</button>
 </div>
 
 <!-- 下部固定トランスポート（QNAUDIOのtop-controlsに準拠） -->

@@ -42,7 +42,7 @@ body {
   color: #f0f0f3;
   font-family: var(--font-body, 'Plus Jakarta Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  padding: 16px 28px 0;
+  padding: 24px 24px 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -50,28 +50,33 @@ body {
 }
 
 /* ---------- Header ---------- */
+/* QNAUDIO PLAYER（PC版 style-core.css）のヘッダーと完全一致させている。
+   QNTEMPOはスマホ専用アプリだが、ヘッダーの見た目・余白・サイズはPLAYERの
+   PC実装値をそのまま踏襲する方針のため、SP向けの縮小は行わない。 */
 #appHeader {
-  flex-shrink: 0;
+  width: 100%;
+  max-width: 1400px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: nowrap;
-  padding-top: max(2px, env(safe-area-inset-top, 0px));
+  gap: 20px;
+  position: relative;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+#appHeaderText {
+  min-width: 0;
 }
 
 #appLogo {
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 18px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: 1px;
-  margin: 0;
+  margin: 0 0 4px;
   color: #f0f0f3;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.25;
 }
 
 #appLogoQN {
@@ -79,16 +84,53 @@ body {
 }
 
 #appVersion {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.5px;
   color: #6b6b7b;
   text-transform: none;
   vertical-align: middle;
-  margin-left: 6px;
+}
+
+#headerControls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .header-btn-wrapper { position: relative; }
+
+#presetBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #f0f0f3;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+#presetBtn:active { transform: scale(0.96); }
+#presetBtn:hover {
+  background: #1c1c24;
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+#presetBtn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+#presetBtn.active {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-glow);
+}
 
 /* ---------- Pulse stage — the heart of the app ---------- */
 .stage-wrap {
@@ -226,7 +268,7 @@ body {
 }
 .layer-step {
   width: 100%;
-  height: 30px;
+  height: 44px;
   min-width: 0;
   border-radius: 6px;
   background: #26262f;
@@ -583,6 +625,98 @@ body {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
+
+/* ---------- プリセット保存・呼び出しポップアップ ---------- */
+.preset-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.preset-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 14px;
+}
+.preset-name-input::placeholder { color: #55555f; }
+.preset-name-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+.preset-save-btn {
+  flex-shrink: 0;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: var(--accent-primary);
+  border: none;
+  color: #fff;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.preset-save-btn:active { transform: scale(0.96); }
+
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 38vh;
+  overflow-y: auto;
+}
+.preset-empty {
+  text-align: center;
+  padding: 20px 0;
+  color: #55555f;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 13px;
+}
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.preset-row-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f0f3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.preset-row-meta {
+  flex-shrink: 0;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 10px;
+  color: #55555f;
+}
+.preset-row-delete {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #55555f;
+  cursor: pointer;
+  font-size: 16px;
+}
+.preset-row-delete:active { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
 .popup-close-btn {
   width: 100%;
