@@ -4,7 +4,7 @@
    そのまま踏襲。スマホ専用単一レイアウトのため、PC/SP分割はしない。
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   --accent-primary: #3b82f6;
@@ -12,8 +12,8 @@
   --accent-glow: rgba(59, 130, 246, 0.35);
   --accent-hover-1: #2563eb;
   --accent-hover-2: #1e40af;
-  --font-display: 'Outfit';
-  --font-body: 'Plus Jakarta Sans';
+  --font-display: 'Instrument Sans';
+  --font-body: 'Instrument Sans';
 
   --ease-snap: cubic-bezier(0.2, 0, 0, 1);
   --ease-glide: cubic-bezier(0.4, 0, 0.2, 1);
@@ -40,7 +40,7 @@ body {
   overflow: hidden;
   background: #0d0d0f;
   color: #f0f0f3;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
   padding: 24px 24px 0;
   display: flex;
@@ -70,7 +70,7 @@ body {
 }
 
 #appLogo {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -168,7 +168,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   color: #f0f0f3;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -206,7 +206,7 @@ body {
 }
 
 .stage-meta-label {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 1.5px;
@@ -215,7 +215,7 @@ body {
 }
 
 .stage-meta-value {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 22px;
   font-weight: 800;
   color: #f0f0f3;
@@ -239,7 +239,7 @@ body {
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #c8c8d0;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -259,7 +259,7 @@ body {
   padding: 6px 9px;
   background: #1c1c24;
   color: #6b6b7b;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -377,7 +377,7 @@ body {
 
 .stage-hint {
   text-align: center;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 11px;
   color: #55555f;
   margin-top: 4px;
@@ -395,7 +395,7 @@ body {
 }
 
 #bpmDisplay {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #ffffff;
@@ -430,7 +430,7 @@ body {
 }
 
 #tempoName {
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-style: italic;
   font-size: 14px;
   color: #8b8b9e;
@@ -482,7 +482,7 @@ body {
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #8b8b9e;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -536,7 +536,7 @@ body {
 }
 
 .popup-title {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -559,7 +559,7 @@ body {
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #c8c8d0;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -601,7 +601,7 @@ body {
   display: block;
 }
 .sound-choice-cell .sc-label {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: #8b8b9e;
@@ -615,7 +615,7 @@ body {
 .sound-choice-cell.selected .sc-label { color: var(--accent-primary); }
 
 .popup-subtitle {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -637,7 +637,7 @@ body {
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #c8c8d0;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -663,7 +663,7 @@ body {
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #f0f0f3;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 14px;
 }
 .preset-name-input::placeholder { color: #55555f; }
@@ -678,7 +678,7 @@ body {
   background: var(--accent-primary);
   border: none;
   color: #fff;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -696,7 +696,7 @@ body {
   text-align: center;
   padding: 20px 0;
   color: #55555f;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 13px;
 }
 .preset-row {
@@ -711,7 +711,7 @@ body {
 .preset-row-name {
   flex: 1;
   min-width: 0;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: #f0f0f3;
@@ -722,7 +722,7 @@ body {
 }
 .preset-row-meta {
   flex-shrink: 0;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 10px;
   color: #55555f;
 }
@@ -754,7 +754,7 @@ body {
   border-radius: 6px;
   background: var(--accent-glow);
   color: var(--accent-primary);
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -768,7 +768,7 @@ body {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   border: none;
   color: #fff;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -786,13 +786,13 @@ body {
   margin-top: 12px;
 }
 .tap-readout {
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 11px;
   color: #6b6b7b;
 }
 .tap-readout b {
   color: var(--accent-primary);
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-weight: 700;
 }
 
@@ -838,7 +838,7 @@ body {
 .loopbtn.active { color: var(--accent-primary); border-color: var(--accent-primary); background: var(--accent-glow); }
 
 .top-controls-btn-label {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.5px;
