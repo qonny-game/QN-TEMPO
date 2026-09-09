@@ -93,82 +93,11 @@ body {
 
 .header-btn-wrapper { position: relative; }
 
-#hamburgerBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* QNシリーズ共通ハンバーガーメニューのマウント先。
+   見た目（ボタン・ポップアップ）は qn-menu.js が fetch する
+   qn-menu.css 側で定義される。ここでは配置だけ担当する。 */
+#qnMenuMount {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  color: #f0f0f3;
-  cursor: pointer;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-}
-#hamburgerBtn:active { transform: scale(0.96); }
-#hamburgerBtn svg { width: 20px; height: 20px; fill: currentColor; }
-#hamburgerBtn.active {
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-
-/* QNPLAYER/QNPITCH/QNPHRASE/QNTEMPO/QNTUNERへのリンク一覧。
-   ヘッダー左下にドロップダウンで開く（PLAYER側のColorドロップダウンと同じ構造）。 */
-.hamburger-menu {
-  display: none;
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  z-index: 350;
-  flex-direction: column;
-  gap: 4px;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 8px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  width: 200px;
-  opacity: 0;
-  transform: translateY(-6px) scale(0.96);
-  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
-}
-.hamburger-menu.open {
-  display: flex;
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
-}
-
-.hamburger-menu-item {
-  display: block;
-  padding: 11px 12px;
-  border-radius: 10px;
-  color: #c8c8d0;
-  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-decoration: none;
-  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
-}
-.hamburger-menu-item:hover {
-  background: #1c1c24;
-  color: var(--accent-primary);
-}
-
-/* 現在開いているアプリ自身へのリンク：クリックできず、アクセントカラーで
-   「今ここにいる」ことを示す */
-.hamburger-menu-item.current {
-  cursor: default;
-  color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-.hamburger-menu-item.current:hover {
-  background: var(--accent-glow);
 }
 
 /* ---------- Pulse stage — the heart of the app ---------- */

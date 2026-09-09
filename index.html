@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>QN TEMPO 1.2.3</title>
+<title>QN TEMPO 1.3.0</title>
 <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
@@ -12,27 +12,21 @@
 <link rel="icon" type="image/png" sizes="512x512" href="favicon/android-chrome-512x512.png">
 <link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="style.css">
+<script>
+  window.QN_CURRENT_APP = "tempo";
+  // QNTEMPOには現時点でキーボードショートカットが無いため、
+  // window.QN_SHORTCUTS はあえて定義しない
+  // （qn-menu.js が Section 3 を自動的に非表示にする）。
+</script>
 </head>
 <body>
 
 <div id="appHeader">
-  <div class="header-btn-wrapper">
-    <button id="hamburgerBtn" title="Menu">
-      <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-    </button>
-    <div class="hamburger-menu" id="hamburgerMenu">
-      <a class="hamburger-menu-item" data-qn-app="player" href="https://qonny-game.github.io/QN-PLAYER/" target="_blank" rel="noopener">QNPLAYER</a>
-      <a class="hamburger-menu-item" data-qn-app="pitch" href="https://qonny-game.github.io/QN-PITCH/" target="_blank" rel="noopener">QNPITCH</a>
-      <a class="hamburger-menu-item" data-qn-app="phrase" href="https://qonny-game.github.io/QN-PHRASE" target="_blank" rel="noopener">QNPHRASE</a>
-      <a class="hamburger-menu-item" data-qn-app="tempo" href="https://qonny-game.github.io/QN-TEMPO/" target="_blank" rel="noopener">QNTEMPO</a>
-      <a class="hamburger-menu-item" data-qn-app="tuner" href="https://qonny-game.github.io/QN-TUNER/" target="_blank" rel="noopener">QNTUNER</a>
-    </div>
-  </div>
+  <div id="qnMenuMount"></div>
   <div id="appHeaderText">
-    <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v1.2.3</span></h1>
+    <h1 id="appLogo"><span id="appLogoQN">QN</span>TEMPO <span id="appVersion">v1.3.0</span></h1>
   </div>
 </div>
-<div class="av-popup-backdrop" id="hamburgerBackdrop"></div>
 
 <div class="stage-wrap">
   <div class="stage-meta">
@@ -139,5 +133,6 @@
 <div class="top-controls-spacer" id="topControlsSpacer"></div>
 
 <script src="app.js"></script>
+<script src="https://qonny-game.github.io/QN-PLAYER/qn-menu.js"></script>
 </body>
 </html>

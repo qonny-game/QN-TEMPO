@@ -231,10 +231,6 @@
   const sigGrid = document.getElementById('sigGrid');
   const sigCloseBtn = document.getElementById('sigCloseBtn');
 
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const hamburgerMenu = document.getElementById('hamburgerMenu');
-  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
-
   const metaDivToggle = document.getElementById('metaDivToggle');
   const metaDivToggleValue = document.getElementById('metaDivToggleValue');
 
@@ -274,34 +270,6 @@
     popup.classList.remove('open');
     backdrop.classList.remove('open');
   }
-
-  // ---------- Hamburger menu (QNPLAYER / QNPITCH / QNPHRASE / QNTEMPO / QNTUNER) ----------
-  // 現在のアプリ（QNTEMPO）へのリンクだけタップ不可・強調表示にする。
-  const CURRENT_QN_APP = 'tempo';
-  hamburgerMenu.querySelectorAll('.hamburger-menu-item').forEach(item => {
-    if (item.dataset.qnApp === CURRENT_QN_APP) {
-      item.classList.add('current');
-      item.removeAttribute('href');
-      item.setAttribute('aria-disabled', 'true');
-      item.addEventListener('click', e => e.preventDefault());
-    }
-  });
-
-  function closeHamburgerMenu() {
-    hamburgerMenu.classList.remove('open');
-    hamburgerBackdrop.classList.remove('open');
-    hamburgerBtn.classList.remove('active');
-  }
-  hamburgerBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hapticTap();
-    const willOpen = !hamburgerMenu.classList.contains('open');
-    hamburgerMenu.classList.toggle('open', willOpen);
-    hamburgerBackdrop.classList.toggle('open', willOpen);
-    hamburgerBtn.classList.toggle('active', willOpen);
-  });
-  hamburgerMenu.addEventListener('click', (e) => e.stopPropagation());
-  hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
 
   // ---------- プリセット保存・呼び出し ----------
   presetBtn.addEventListener('click', () => {
