@@ -231,7 +231,12 @@
   const sigGrid = document.getElementById('sigGrid');
   const sigCloseBtn = document.getElementById('sigCloseBtn');
 
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const hamburgerMenu = document.getElementById('hamburgerMenu');
+  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
+
   const metaDivToggle = document.getElementById('metaDivToggle');
+  const metaDivToggleValue = document.getElementById('metaDivToggleValue');
 
   const soundPickPopup = document.getElementById('soundPickPopup');
   const soundPickBackdrop = document.getElementById('soundPickBackdrop');
@@ -269,6 +274,34 @@
     popup.classList.remove('open');
     backdrop.classList.remove('open');
   }
+
+  // ---------- Hamburger menu (QNPLAYER / QNPITCH / QNPHRASE / QNTEMPO / QNTUNER) ----------
+  // 現在のアプリ（QNTEMPO）へのリンクだけタップ不可・強調表示にする。
+  const CURRENT_QN_APP = 'tempo';
+  hamburgerMenu.querySelectorAll('.hamburger-menu-item').forEach(item => {
+    if (item.dataset.qnApp === CURRENT_QN_APP) {
+      item.classList.add('current');
+      item.removeAttribute('href');
+      item.setAttribute('aria-disabled', 'true');
+      item.addEventListener('click', e => e.preventDefault());
+    }
+  });
+
+  function closeHamburgerMenu() {
+    hamburgerMenu.classList.remove('open');
+    hamburgerBackdrop.classList.remove('open');
+    hamburgerBtn.classList.remove('active');
+  }
+  hamburgerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hapticTap();
+    const willOpen = !hamburgerMenu.classList.contains('open');
+    hamburgerMenu.classList.toggle('open', willOpen);
+    hamburgerBackdrop.classList.toggle('open', willOpen);
+    hamburgerBtn.classList.toggle('active', willOpen);
+  });
+  hamburgerMenu.addEventListener('click', (e) => e.stopPropagation());
+  hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
 
   // ---------- プリセット保存・呼び出し ----------
   presetBtn.addEventListener('click', () => {
@@ -508,23 +541,34 @@
   }
 
   // ---------- ALL 16 / ALL 3 toggle (applies the chosen division to every row at once) ----------
+  // 1ボタン式：タップするたびに16分(sixteenth)⇔8分3連(eighthTriplet)を切り替える。
+  const DIV_ORDER = ['sixteenth', 'eighthTriplet'];
+  const DIV_TOGGLE_LABEL = { sixteenth: 'ALL 16', eighthTriplet: 'ALL 3' };
+
   function updateMetaDivToggle() {
     const allSame = state.rows.every(r => r.division === state.rows[0].division);
-    metaDivToggle.querySelectorAll('.meta-div-btn').forEach(btn => {
-      btn.classList.toggle('selected', allSame && btn.dataset.division === state.rows[0].division);
-    });
+    const current = allSame ? state.rows[0].division : null;
+    metaDivToggle.classList.toggle('selected', !!current);
+    metaDivToggleValue.textContent = current ? DIV_TOGGLE_LABEL[current] : 'MIXED';
+    metaDivToggle.dataset.current = current || '';
   }
 
-  metaDivToggle.querySelectorAll('.meta-div-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      hapticTap();
-      const divKey = btn.dataset.division;
-      state.rows.forEach(row => {
-        row.division = divKey;
-        row.pattern = new Array(DIVISIONS[divKey].steps * state.beatsPerBar).fill('off');
-      });
-      renderBeats();
+  metaDivToggle.addEventListener('click', () => {
+    hapticTap();
+    // 全行が同じ分割の時はその次の分割へ、混在している時は先頭の分割へ揃える。
+    const allSame = state.rows.every(r => r.division === state.rows[0].division);
+    let nextDiv;
+    if (allSame) {
+      const idx = DIV_ORDER.indexOf(state.rows[0].division);
+      nextDiv = DIV_ORDER[(idx + 1) % DIV_ORDER.length];
+    } else {
+      nextDiv = DIV_ORDER[0];
+    }
+    state.rows.forEach(row => {
+      row.division = nextDiv;
+      row.pattern = new Array(DIVISIONS[nextDiv].steps * state.beatsPerBar).fill('off');
     });
+    renderBeats();
   });
 
   // ---------- 音色ミニピッカー（段の音色ボタンをタップして開く。音色(ペア単位)＋分割を
@@ -604,7 +648,7 @@
     sigToggleValue.textContent = presetLabelFor(n);
   }
 
-  const SIG_OPTIONS = [2, 3, 4, 5, 6, 7, 8];
+  const SIG_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
   SIG_OPTIONS.forEach(n => {
     const cell = document.createElement('div');
     cell.className = 'choice-cell' + (n === state.beatsPerBar ? ' selected' : '');

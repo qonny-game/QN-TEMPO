@@ -50,16 +50,15 @@ body {
 }
 
 /* ---------- Header ---------- */
-/* QNAUDIO PLAYER（PC版 style-core.css）のヘッダーと完全一致させている。
-   QNTEMPOはスマホ専用アプリだが、ヘッダーの見た目・余白・サイズはPLAYERの
-   PC実装値をそのまま踏襲する方針のため、SP向けの縮小は行わない。 */
+/* ハンバーガーメニュー（左）＋ロゴの並び。QNAUDIO PLAYERのPC版ヘッダー実寸を
+   引き続き踏襲する（ロゴサイズ・余白等）。 */
 #appHeader {
   width: 100%;
   max-width: 1400px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
   position: relative;
   z-index: 200;
   flex-shrink: 0;
@@ -74,7 +73,7 @@ body {
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 1px;
-  margin: 0 0 4px;
+  margin: 0;
   color: #f0f0f3;
   text-transform: uppercase;
 }
@@ -92,99 +91,83 @@ body {
   vertical-align: middle;
 }
 
-#headerControls {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .header-btn-wrapper { position: relative; }
 
-#qnNavGroup {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.qn-nav-btn {
+#hamburgerBtn {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
-  flex-shrink: 0;
+  padding: 0;
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  cursor: pointer;
   color: #f0f0f3;
-  text-decoration: none;
+  cursor: pointer;
   transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
-
-.qn-nav-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-  flex-shrink: 0;
-}
-
-.qn-nav-btn span {
-  display: none;
-}
-
-.qn-nav-btn:hover {
-  background: #1c1c24;
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-.qn-nav-btn:active {
-  transform: scale(0.96);
-}
-
-/* 現在開いているアプリ自身へのリンク：アイコンは見えるがクリックできず、
-   「今ここにいる」ことが分かる表示になる */
-.qn-nav-btn.current {
-  cursor: default;
+#hamburgerBtn:active { transform: scale(0.96); }
+#hamburgerBtn svg { width: 20px; height: 20px; fill: currentColor; }
+#hamburgerBtn.active {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
   background: var(--accent-glow);
 }
 
-.qn-nav-btn.current:hover {
-  transform: none;
-}
-
-#presetBtn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+/* QNPLAYER/QNPITCH/QNPHRASE/QNTEMPO/QNTUNERへのリンク一覧。
+   ヘッダー左下にドロップダウンで開く（PLAYER側のColorドロップダウンと同じ構造）。 */
+.hamburger-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 350;
+  flex-direction: column;
+  gap: 4px;
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  cursor: pointer;
-  color: #f0f0f3;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  width: 200px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
+}
+.hamburger-menu.open {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+.hamburger-menu-item {
+  display: block;
+  padding: 11px 12px;
+  border-radius: 10px;
+  color: #c8c8d0;
   font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
 }
-#presetBtn:active { transform: scale(0.96); }
-#presetBtn:hover {
+.hamburger-menu-item:hover {
   background: #1c1c24;
-  border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
-#presetBtn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
-#presetBtn.active {
+
+/* 現在開いているアプリ自身へのリンク：クリックできず、アクセントカラーで
+   「今ここにいる」ことを示す */
+.hamburger-menu-item.current {
+  cursor: default;
   color: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: var(--accent-glow);
+}
+.hamburger-menu-item.current:hover {
   background: var(--accent-glow);
 }
 
@@ -247,27 +230,35 @@ body {
 .meta-inline-btn:active { transform: scale(0.95); }
 .meta-inline-btn .chevron { width: 14px; height: 14px; fill: currentColor; opacity: 0.6; }
 
-/* ALL 16 / ALL 3 トグル：全行を一括で分割変更する */
-.meta-div-toggle {
-  display: flex;
-  margin-left: auto;
+/* ALL 16 / ALL 3 トグル：タップごとに全行の分割を一括で切り替える1ボタン式。 */
+.meta-div-toggle-btn {
+  padding: 6px 10px;
   border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.meta-div-btn {
-  padding: 6px 9px;
   background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #6b6b7b;
   font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.3px;
   cursor: pointer;
-  border: none;
 }
-.meta-div-btn:active { transform: scale(0.95); }
-.meta-div-btn.selected { background: var(--accent-primary); color: #fff; }
+.meta-div-toggle-btn:active { transform: scale(0.95); }
+.meta-div-toggle-btn.selected {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+/* プリセットボタン：BEATヘッダー行の右端（ドラムロールの真上）に配置 */
+.meta-preset-btn {
+  margin-left: auto;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.meta-preset-btn svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
 
 /* ---------- Step sequencer: table layout ---------- */
 /* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
