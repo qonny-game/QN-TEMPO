@@ -99,21 +99,23 @@
   }
 
   // "Shuffle Beat" も同じく組み込みの固定プリセット。8分3連(ALL 3)で、
-  // ハイハット=1・3・4拍目の頭とウラ(0,2マス目)、スネア=2拍目の頭とウラのみ、
-  // バス=1・2拍目の頭のみ、という跳ねたシャッフルのノリ。
+  // ハイハット=1拍目頭・2拍目頭とウラ・3拍目頭・4拍目頭とウラ、
+  // スネア=2拍目頭・4拍目頭のみ、バス=1拍目頭・3拍目頭のみ、という跳ねたシャッフルのノリ。
   function buildShuffleBeatPreset() {
     const beatsPerBar = 4;
     const hihat = makeLayerRow('hihat', 'eighthTriplet', beatsPerBar);
     const snare = makeLayerRow('snare', 'eighthTriplet', beatsPerBar);
     const bass = makeLayerRow('bass', 'eighthTriplet', beatsPerBar);
-    [0, 2, 3].forEach(bi => {
-      hihat.pattern[bi * 3 + 0] = 'A';
-      hihat.pattern[bi * 3 + 2] = 'A';
-    });
+    hihat.pattern[0 * 3 + 0] = 'A';
+    hihat.pattern[1 * 3 + 0] = 'A';
+    hihat.pattern[1 * 3 + 2] = 'A';
+    hihat.pattern[2 * 3 + 0] = 'A';
+    hihat.pattern[3 * 3 + 0] = 'A';
+    hihat.pattern[3 * 3 + 2] = 'A';
     snare.pattern[1 * 3 + 0] = 'A';
-    snare.pattern[1 * 3 + 2] = 'A';
+    snare.pattern[3 * 3 + 0] = 'A';
     bass.pattern[0 * 3] = 'A';
-    bass.pattern[1 * 3] = 'A';
+    bass.pattern[2 * 3] = 'A';
     return {
       name: 'Shuffle Beat',
       builtin: true,
@@ -248,6 +250,7 @@
   const presetSaveBtn = document.getElementById('presetSaveBtn');
   const presetList = document.getElementById('presetList');
   const presetCloseBtn = document.getElementById('presetCloseBtn');
+  const clearBeatsBtn = document.getElementById('clearBeatsBtn');
 
   const topControls = document.getElementById('topControls');
   const topControlsSpacer = document.getElementById('topControlsSpacer');
@@ -289,6 +292,16 @@
     savePresets(list);
     presetNameInput.value = '';
     renderPresetList();
+  });
+
+  // ---------- クリア（全マスをoffに戻す。BPM・拍子・分割・音色設定は維持） ----------
+  clearBeatsBtn.addEventListener('click', () => {
+    hapticTap();
+    state.rows.forEach(row => {
+      row.pattern = row.pattern.map(() => 'off');
+    });
+    state.currentBeat = -1;
+    renderBeats();
   });
 
   function renderPresetList() {
@@ -532,11 +545,13 @@
     } else {
       nextDiv = DIV_ORDER[0];
     }
-    state.rows.forEach(row => {
-      row.division = nextDiv;
-      row.pattern = new Array(DIVISIONS[nextDiv].steps * state.beatsPerBar).fill('off');
-    });
+    // 16分(ALL 16)⇔8分3連(ALL 3)の切替に合わせて、対応する組み込みプリセット
+    // （8 Beat / Shuffle Beat）を自動でセットする。BPMは現在の値を維持する。
+    const presetForDiv = nextDiv === 'sixteenth' ? buildEightBeatPreset() : buildShuffleBeatPreset();
+    const keepBpm = state.bpm;
+    applySerializedState({ ...presetForDiv, bpm: keepBpm });
     renderBeats();
+    updatePresetSelection();
   });
 
   // ---------- 音色ミニピッカー（段の音色ボタンをタップして開く。音色(ペア単位)＋分割を

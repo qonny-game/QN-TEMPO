@@ -185,6 +185,15 @@ body {
 }
 .meta-preset-btn svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
 
+/* クリアボタン：PRESETボタンのすぐ右隣に配置。全マスをoffに戻す。 */
+.meta-clear-btn {
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.meta-clear-btn svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+
 /* ---------- Step sequencer: table layout ---------- */
 /* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
    [拍ごとのパターン本体]。1行あたり最大4拍分を表示し、5拍目以降は次の行に
