@@ -64,16 +64,12 @@ body {
   flex-shrink: 0;
 }
 
-#appHeaderText {
-  min-width: 0;
-}
-
 #appLogo {
   font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 1px;
-  margin: 0 0 4px;
+  margin: 0;
   color: #f0f0f3;
   text-transform: uppercase;
 }
